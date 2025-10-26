@@ -21,25 +21,35 @@ export function GuildSelectorContainer({
   const [guilds, setGuilds] = useState<Guild[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
-  useEffect(() => {
+  const MAX_RETRIES = 3
+
+  const fetchGuilds = () => {
+    setLoading(true)
+    setError(null)
+    
     guildApi.getMyGuilds()
       .then(setGuilds)
       .catch((err) => {
-        setError(err.response?.data?.message || 'Failed to load guilds')
+        const errorMessage = err.response?.data?.message || 'Failed to load guilds'
+        setError(errorMessage)
       })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchGuilds()
   }, [])
 
   const handleRetry = () => {
-    setLoading(true)
-    setError(null)
-    guildApi.getMyGuilds()
-      .then(setGuilds)
-      .catch((err) => {
-        setError(err.response?.data?.message || 'Failed to load guilds')
-      })
-      .finally(() => setLoading(false))
+    if (retryCount >= MAX_RETRIES) {
+      setError('Max retries reached. Please refresh the page.')
+      return
+    }
+    
+    setRetryCount(prev => prev + 1)
+    fetchGuilds()
   }
 
   if (loading) {

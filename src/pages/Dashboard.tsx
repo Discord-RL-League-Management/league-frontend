@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { GuildSelectorContainer } from '../components/guild-selector-container';
 import GuildDashboard from '../components/GuildDashboard';

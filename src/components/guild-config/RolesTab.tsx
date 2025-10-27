@@ -8,7 +8,7 @@ interface RolesTabProps {
   guildId: string;
 }
 
-export function RolesTab(_props: RolesTabProps) {
+export function RolesTab({ guildId }: RolesTabProps) {
   const { settings } = useSettingsStore();
   const roles = settings?.roles;
 
@@ -69,7 +69,9 @@ export function RolesTab(_props: RolesTabProps) {
       </Card>
       
       <div className="text-sm text-muted-foreground text-center">
-        Role configuration requires Discord API integration
+        Role configuration requires Discord API integration.
+        <br />
+        Guild ID: {guildId}
       </div>
     </div>
   );

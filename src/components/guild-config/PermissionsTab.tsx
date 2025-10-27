@@ -8,7 +8,7 @@ interface PermissionsTabProps {
   guildId: string;
 }
 
-export function PermissionsTab(_props: PermissionsTabProps) {
+export function PermissionsTab({ guildId }: PermissionsTabProps) {
   const { settings } = useSettingsStore();
   const permissions = settings?.permissions;
 
@@ -67,6 +67,10 @@ export function PermissionsTab(_props: PermissionsTabProps) {
           })}
         </CardContent>
       </Card>
+      
+      <div className="text-sm text-muted-foreground text-center">
+        Guild ID: {guildId}
+      </div>
     </div>
   );
 }

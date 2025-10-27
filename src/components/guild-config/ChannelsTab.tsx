@@ -8,7 +8,7 @@ interface ChannelsTabProps {
   guildId: string;
 }
 
-export function ChannelsTab(_props: ChannelsTabProps) {
+export function ChannelsTab({ guildId }: ChannelsTabProps) {
   const { settings } = useSettingsStore();
   const channels = settings?.channels;
 
@@ -59,7 +59,9 @@ export function ChannelsTab(_props: ChannelsTabProps) {
       </Card>
       
       <div className="text-sm text-muted-foreground text-center">
-        Channel configuration requires Discord API integration
+        Channel configuration requires Discord API integration.
+        <br />
+        Guild ID: {guildId}
       </div>
     </div>
   );

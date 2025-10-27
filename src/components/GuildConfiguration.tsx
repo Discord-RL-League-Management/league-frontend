@@ -18,7 +18,7 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
   const handleReset = async () => {
     try {
       await resetSettings(guildId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to reset settings:', err);
     }
   };

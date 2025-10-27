@@ -8,7 +8,8 @@ interface ChannelsTabProps {
   guildId: string;
 }
 
-export function ChannelsTab({ guildId: _guildId }: ChannelsTabProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function ChannelsTab({ guildId }: ChannelsTabProps) {
   const { settings } = useSettingsStore();
   const channels = settings?.channels;
 

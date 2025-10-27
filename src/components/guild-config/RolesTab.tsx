@@ -8,7 +8,7 @@ interface RolesTabProps {
   guildId: string;
 }
 
-export function RolesTab({ guildId }: RolesTabProps) {
+export function RolesTab({ guildId: _guildId }: RolesTabProps) {
   const { settings } = useSettingsStore();
   const roles = settings?.roles;
 

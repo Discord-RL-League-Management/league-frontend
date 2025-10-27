@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores';
-import type { GuildSettingsType } from '../types';
 import { FeaturesTab, ChannelsTab, RolesTab, PermissionsTab, DisplayTab } from './guild-config';
 
 interface GuildConfigurationProps {

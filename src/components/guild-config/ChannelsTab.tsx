@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ChannelIcon } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useSettingsStore } from '@/stores';
 import type { ChannelsConfig } from '@/types';
 
@@ -9,7 +8,7 @@ interface ChannelsTabProps {
   guildId: string;
 }
 
-export function ChannelsTab({ guildId }: ChannelsTabProps) {
+export function ChannelsTab({ guildId: _guildId }: ChannelsTabProps) {
   const { settings } = useSettingsStore();
   const channels = settings?.channels;
 
@@ -37,7 +36,7 @@ export function ChannelsTab({ guildId }: ChannelsTabProps) {
             return (
               <div key={key} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <ChannelIcon className="h-5 w-5 text-muted-foreground" />
+                  <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <div className="font-medium">{label}</div>
                     <p className="text-sm text-muted-foreground">{description}</p>

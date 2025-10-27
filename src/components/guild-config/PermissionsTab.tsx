@@ -8,7 +8,7 @@ interface PermissionsTabProps {
   guildId: string;
 }
 
-export function PermissionsTab({ guildId }: PermissionsTabProps) {
+export function PermissionsTab({ guildId: _guildId }: PermissionsTabProps) {
   const { settings } = useSettingsStore();
   const permissions = settings?.permissions;
 

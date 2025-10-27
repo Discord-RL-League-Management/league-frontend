@@ -1,4 +1,4 @@
-import { type Guild } from '../lib/api';
+import type { Guild } from '../types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

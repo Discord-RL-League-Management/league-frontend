@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { guildApi } from '../lib/api';
-import { useOptimisticSettings } from '../hooks/useOptimisticSettings';
+import { useSettingsStore } from '../stores';
+import type { GuildSettingsType } from '../types';
 
 interface GuildConfigurationProps {
   guildId: string;
@@ -9,18 +9,21 @@ interface GuildConfigurationProps {
 
 export default function GuildConfiguration({ guildId }: GuildConfigurationProps) {
   const [activeTab, setActiveTab] = useState('features');
-  const { settings, isLoading, error: updateError, retry, refetch, initialLoading } = useOptimisticSettings(guildId);
+  const { settings, loading, error, loadSettings, resetSettings, retry } = useSettingsStore();
 
-  const resetSettings = async () => {
+  useEffect(() => {
+    loadSettings(guildId);
+  }, [guildId, loadSettings]);
+
+  const handleReset = async () => {
     try {
-      await guildApi.resetGuildSettings(guildId);
-      refetch();
+      await resetSettings(guildId);
     } catch (err: any) {
       console.error('Failed to reset settings:', err);
     }
   };
 
-  if (initialLoading) {
+  if (loading && !settings) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -51,36 +54,36 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">Guild Configuration</h2>
           <div className="flex gap-2">
-            {updateError && (
+            {error && (
               <button
-                onClick={retry}
+                onClick={() => retry(guildId)}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Retry Failed Update
               </button>
             )}
             <button
-              onClick={resetSettings}
-              disabled={isLoading}
+              onClick={handleReset}
+              disabled={loading}
               className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors"
             >
-              {isLoading ? 'Resetting...' : 'Reset to Defaults'}
+              {loading ? 'Resetting...' : 'Reset to Defaults'}
             </button>
           </div>
         </div>
 
         {/* Error Display */}
-        {updateError && (
+        {error && (
           <div className="bg-red-900 border border-red-700 rounded-lg p-4 mb-6">
             <div className="text-red-200">
               <h4 className="font-semibold">Update Failed</h4>
-              <p className="text-sm text-red-300 mt-1">{updateError}</p>
+              <p className="text-sm text-red-300 mt-1">{error}</p>
             </div>
           </div>
         )}
 
         {/* Loading Indicator */}
-        {isLoading && (
+        {loading && settings && (
           <div className="bg-blue-900 border border-blue-700 rounded-lg p-4 mb-6">
             <div className="text-blue-200 flex items-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2"></div>

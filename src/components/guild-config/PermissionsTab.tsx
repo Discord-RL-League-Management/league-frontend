@@ -8,8 +8,7 @@ interface PermissionsTabProps {
   guildId: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function PermissionsTab({ guildId }: PermissionsTabProps) {
+export function PermissionsTab(_props: PermissionsTabProps) {
   const { settings } = useSettingsStore();
   const permissions = settings?.permissions;
 

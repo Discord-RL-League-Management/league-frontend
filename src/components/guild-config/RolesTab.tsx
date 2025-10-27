@@ -8,8 +8,7 @@ interface RolesTabProps {
   guildId: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function RolesTab({ guildId }: RolesTabProps) {
+export function RolesTab(_props: RolesTabProps) {
   const { settings } = useSettingsStore();
   const roles = settings?.roles;
 

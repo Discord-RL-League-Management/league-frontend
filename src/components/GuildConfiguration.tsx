@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores';
 import type { GuildSettingsType } from '../types';
+import { FeaturesTab, ChannelsTab, RolesTab, PermissionsTab, DisplayTab } from './guild-config';
 
 interface GuildConfigurationProps {
   guildId: string;
@@ -112,35 +113,14 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
 
         {/* Tab Content */}
         <div className="bg-gray-700 rounded-lg p-6">
-          {activeTab === 'features' && <FeaturesTab />}
-          {activeTab === 'channels' && <ChannelsTab />}
-          {activeTab === 'roles' && <RolesTab />}
-          {activeTab === 'permissions' && <PermissionsTab />}
-          {activeTab === 'display' && <DisplayTab />}
+          {activeTab === 'features' && <FeaturesTab guildId={guildId} />}
+          {activeTab === 'channels' && <ChannelsTab guildId={guildId} />}
+          {activeTab === 'roles' && <RolesTab guildId={guildId} />}
+          {activeTab === 'permissions' && <PermissionsTab guildId={guildId} />}
+          {activeTab === 'display' && <DisplayTab guildId={guildId} />}
         </div>
       </div>
     </div>
   );
-}
-
-// Placeholder tab components
-function FeaturesTab() {
-  return <div className="text-gray-400">Features configuration coming soon</div>;
-}
-
-function ChannelsTab() {
-  return <div className="text-gray-400">Channels configuration coming soon</div>;
-}
-
-function RolesTab() {
-  return <div className="text-gray-400">Roles configuration coming soon</div>;
-}
-
-function PermissionsTab() {
-  return <div className="text-gray-400">Permissions configuration coming soon</div>;
-}
-
-function DisplayTab() {
-  return <div className="text-gray-400">Display configuration coming soon</div>;
 }
 

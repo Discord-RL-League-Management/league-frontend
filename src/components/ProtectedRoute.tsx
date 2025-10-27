@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LoadingState } from './ui/loading-state';
+import { LoadingState } from './loading-state';
 
 /**
  * ProtectedRoute - Single responsibility: Route-level authorization only

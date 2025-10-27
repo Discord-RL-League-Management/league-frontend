@@ -1,4 +1,4 @@
-import { GuildAvatar } from "@/components/ui/guild-avatar"
+import { GuildAvatar } from "@/components/guild-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"

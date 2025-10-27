@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { GuildSelectorContainer } from '../components/guild-selector-container';
 import GuildDashboard from '../components/GuildDashboard';
 import { NavigationBar } from '../components/navigation-bar';
-import { PageContainer } from '../components/ui/page-container';
+import { PageContainer } from '../components/page-container';
 import type { Guild } from '../lib/api';
 
 /**

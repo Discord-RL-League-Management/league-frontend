@@ -1,4 +1,4 @@
-import { LoadingSpinner } from "./loading-spinner"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import { cn } from "@/lib/utils"
 
 interface LoadingStateProps {

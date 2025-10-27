@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { UserAvatar } from "@/components/ui/user-avatar"
+import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
 
 interface User {
@@ -52,6 +52,8 @@ export function NavigationBar({ user, onLogout, className }: NavigationBarProps)
     </nav>
   )
 }
+
+
 
 
 

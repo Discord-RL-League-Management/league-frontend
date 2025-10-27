@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { GuildList } from './guild-list'
-import { LoadingState } from './ui/loading-state'
-import { ErrorDisplay } from './ui/error-display'
+import { LoadingState } from './loading-state'
+import { ErrorDisplay } from './error-display'
 import { guildApi, type Guild } from '../lib/api'
 
 interface GuildSelectorContainerProps {

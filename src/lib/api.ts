@@ -139,6 +139,18 @@ export const guildApi = {
     const response = await api.patch(`/api/guilds/${guildId}/settings`, settings);
     return response.data;
   },
+
+  resetGuildSettings: async (guildId: string) => {
+    const response = await api.post(`/api/guilds/${guildId}/settings/reset`);
+    return response.data;
+  },
+
+  getSettingsHistory: async (guildId: string, limit: number = 50) => {
+    const response = await api.get(`/api/guilds/${guildId}/settings/history`, {
+      params: { limit },
+    });
+    return response.data;
+  },
 };
 
 export default api;

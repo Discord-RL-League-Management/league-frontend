@@ -2,8 +2,10 @@ import { type Guild } from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GuildAvatar } from '@/components/ui/guild-avatar';
+import { GuildAvatar } from '@/components/guild-avatar';
 import { ArrowLeft } from 'lucide-react';
+import GuildConfiguration from '@/components/GuildConfiguration';
+import { useState } from 'react';
 
 interface GuildDashboardProps {
   guild: Guild;
@@ -16,6 +18,8 @@ interface GuildDashboardProps {
  * Separation of Concerns: UI presentation only, delegates actions to parent
  */
 export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
+  const [activeTab, setActiveTab] = useState('overview');
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
@@ -43,8 +47,29 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
         </CardHeader>
       </Card>
 
-      {/* Placeholder Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tab Navigation */}
+      {guild.roles.includes('admin') && (
+        <div className="flex space-x-1 mb-6 bg-muted p-1 rounded-lg">
+          <Button
+            variant={activeTab === 'overview' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('overview')}
+            className="flex-1"
+          >
+            Overview
+          </Button>
+          <Button
+            variant={activeTab === 'settings' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('settings')}
+            className="flex-1"
+          >
+            Settings
+          </Button>
+        </div>
+      )}
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Settings Card */}
         <Card>
           <CardHeader>
@@ -92,7 +117,12 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <GuildConfiguration guildId={guild.id} />
+      )}
     </div>
   );
 }

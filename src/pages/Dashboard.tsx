@@ -1,18 +1,16 @@
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore, useGuildStore } from '../stores';
 import { GuildSelectorContainer } from '../components/guild-selector-container';
 import GuildDashboard from '../components/GuildDashboard';
 import { NavigationBar } from '../components/navigation-bar';
 import { PageContainer } from '../components/page-container';
-import type { Guild } from '../lib/api';
 
 /**
  * Dashboard - Single responsibility: Display user data only
  * No business logic, pure presentation with data fetching
  */
 export default function Dashboard() {
-  const { user, logout } = useAuth();
-  const [selectedGuild, setSelectedGuild] = useState<Guild | null>(null);
+  const { user, logout } = useAuthStore();
+  const { selectedGuild, setSelectedGuild } = useGuildStore();
 
   if (!user) return null;
 
@@ -27,7 +25,7 @@ export default function Dashboard() {
               onGuildSelect={setSelectedGuild} 
             />
           </div>
-        ) : (
+        ) : selectedGuild && (
           <GuildDashboard 
             guild={selectedGuild} 
             onBack={() => setSelectedGuild(null)} 

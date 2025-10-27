@@ -1,4 +1,4 @@
-import { useAuth } from '../contexts/AuthContext'
+import { useAuthStore } from '../stores'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
  * No business logic, pure presentation
  */
 export default function Login() {
-  const { login } = useAuth()
+  const login = useAuthStore((state) => state.login)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

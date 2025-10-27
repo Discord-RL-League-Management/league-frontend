@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { GuildList } from './guild-list'
 import { LoadingState } from './loading-state'
 import { ErrorDisplay } from './error-display'
-import { guildApi, type Guild } from '../lib/api'
+import { useGuildStore } from '../stores'
+import type { Guild } from '../types'
 
 interface GuildSelectorContainerProps {
   onGuildSelect: (guild: Guild) => void
@@ -11,6 +12,7 @@ interface GuildSelectorContainerProps {
 
 /**
  * GuildSelectorContainer - Single responsibility: Handle guild data fetching
+ * Uses Zustand store for state management
  * Handles API calls, loading, error states
  * Clear boundary between data and UI
  */
@@ -18,46 +20,18 @@ export function GuildSelectorContainer({
   onGuildSelect, 
   selectedGuildId 
 }: GuildSelectorContainerProps) {
-  const [guilds, setGuilds] = useState<Guild[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [retryCount, setRetryCount] = useState(0)
-
-  const MAX_RETRIES = 3
-
-  const fetchGuilds = () => {
-    setLoading(true)
-    setError(null)
-    
-    guildApi.getMyGuilds()
-      .then(setGuilds)
-      .catch((err) => {
-        const errorMessage = err.response?.data?.message || 'Failed to load guilds'
-        setError(errorMessage)
-      })
-      .finally(() => setLoading(false))
-  }
+  const { guilds, loading, error, fetchGuilds, retry } = useGuildStore()
 
   useEffect(() => {
     fetchGuilds()
-  }, [])
-
-  const handleRetry = () => {
-    if (retryCount >= MAX_RETRIES) {
-      setError('Max retries reached. Please refresh the page.')
-      return
-    }
-    
-    setRetryCount(prev => prev + 1)
-    fetchGuilds()
-  }
+  }, [fetchGuilds])
 
   if (loading) {
     return <LoadingState message="Loading guilds..." />
   }
 
   if (error) {
-    return <ErrorDisplay error={error} onRetry={handleRetry} />
+    return <ErrorDisplay error={error} onRetry={retry} />
   }
 
   return (

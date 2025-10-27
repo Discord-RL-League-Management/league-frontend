@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../stores';
 import { LoadingState } from './loading-state';
 
 /**
@@ -7,7 +7,8 @@ import { LoadingState } from './loading-state';
  * No API calls or business logic, pure authorization guard
  */
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
 
   if (loading) {
     return <LoadingState message="Loading..." />;

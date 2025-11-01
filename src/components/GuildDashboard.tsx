@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { GuildAvatar } from '@/components/guild-avatar';
 import { ArrowLeft } from 'lucide-react';
 import GuildConfiguration from '@/components/GuildConfiguration';
+import MemberList from '@/components/MemberList';
 import { useState } from 'react';
+import { useGuildPermissions } from '../hooks/useGuildPermissions';
 
 interface GuildDashboardProps {
   guild: Guild;
@@ -15,10 +17,11 @@ interface GuildDashboardProps {
 /**
  * Guild Dashboard Component
  * Single Responsibility: Display guild-specific information and management
- * Separation of Concerns: UI presentation only, delegates actions to parent
+ * Separation of Concerns: Component uses hook, doesn't fetch data
  */
 export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
+  const { isAdmin, loading } = useGuildPermissions(guild.id);
 
   return (
     <div className="space-y-6">
@@ -40,7 +43,7 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
             <div>
               <h1 className="text-3xl font-bold text-foreground">{guild.name}</h1>
               <Badge variant="secondary" className="mt-2">
-                {guild.roles.includes('admin') ? 'Administrator' : 'Member'}
+                {loading ? 'Loading...' : (isAdmin ? 'Administrator' : 'Member')}
               </Badge>
             </div>
           </div>
@@ -48,7 +51,7 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
       </Card>
 
       {/* Tab Navigation */}
-      {guild.roles.includes('admin') && (
+      {isAdmin && (
         <div className="flex space-x-1 mb-6 bg-muted p-1 rounded-lg">
           <Button
             variant={activeTab === 'overview' ? 'default' : 'ghost'}
@@ -56,6 +59,13 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
             className="flex-1"
           >
             Overview
+          </Button>
+          <Button
+            variant={activeTab === 'members' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('members')}
+            className="flex-1"
+          >
+            Members
           </Button>
           <Button
             variant={activeTab === 'settings' ? 'default' : 'ghost'}
@@ -118,6 +128,10 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
           </CardContent>
         </Card>
         </div>
+      )}
+
+      {activeTab === 'members' && (
+        <MemberList guildId={guild.id} />
       )}
 
       {activeTab === 'settings' && (

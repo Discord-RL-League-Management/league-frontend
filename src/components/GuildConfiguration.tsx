@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores';
 import { FeaturesTab, ChannelsTab, RolesTab, PermissionsTab, DisplayTab } from './guild-config';
+import { AuditLogTab } from './guild-config/AuditLogTab';
+import { PermissionGuard } from '../components/PermissionGuard';
 
 interface GuildConfigurationProps {
   guildId: string;
@@ -46,6 +48,7 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
     { id: 'roles', label: 'Roles', icon: '👥' },
     { id: 'permissions', label: 'Permissions', icon: '🔒' },
     { id: 'display', label: 'Display', icon: '🎨' },
+    { id: 'audit', label: 'Audit Logs', icon: '📋' },
   ];
 
   return (
@@ -117,6 +120,11 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
           {activeTab === 'roles' && <RolesTab guildId={guildId} />}
           {activeTab === 'permissions' && <PermissionsTab guildId={guildId} />}
           {activeTab === 'display' && <DisplayTab guildId={guildId} />}
+          {activeTab === 'audit' && (
+            <PermissionGuard guildId={guildId} requireAdmin>
+              <AuditLogTab guildId={guildId} />
+            </PermissionGuard>
+          )}
         </div>
       </div>
     </div>

@@ -50,4 +50,32 @@ export const guildApi = {
     const response = await api.get(`/api/guilds/${guildId}/roles`);
     return response.data;
   },
+
+  /**
+   * Get guild members with pagination
+   */
+  getGuildMembers: async (guildId: string, page: number = 1, limit: number = 20): Promise<any> => {
+    const response = await api.get(`/api/guilds/${guildId}/members`, {
+      params: { page, limit },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get specific guild member
+   */
+  getGuildMember: async (guildId: string, userId: string): Promise<any> => {
+    const response = await api.get(`/api/guilds/${guildId}/members/${userId}`);
+    return response.data;
+  },
+
+  /**
+   * Search guild members
+   */
+  searchGuildMembers: async (guildId: string, query: string, page: number = 1, limit: number = 20): Promise<any> => {
+    const response = await api.get(`/api/guilds/${guildId}/members/search`, {
+      params: { q: query, page, limit },
+    });
+    return response.data;
+  },
 };

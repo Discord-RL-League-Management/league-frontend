@@ -5,5 +5,6 @@
 
 export * from './authStore';
 export * from './guildStore';
+export * from './permissionStore';
 export * from './settingsStore';
 

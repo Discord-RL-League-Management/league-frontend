@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { authApi } from '../lib/api';
-import type { User } from '../types';
+import { authApi } from '../lib/api/index.ts';
+import type { User } from '../types/index.ts';
 
 interface AuthState {
   user: User | null;
@@ -14,7 +14,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  loading: true,
+  loading: false,
   error: null,
 
   login: () => {
@@ -28,7 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   fetchUser: async () => {
     try {
-      set({ error: null });
+      set({ loading: true, error: null });
       const userData = await authApi.getCurrentUser();
       set({ user: userData, loading: false });
     } catch (err: any) {
@@ -44,7 +44,4 @@ export const useAuthStore = create<AuthState>((set) => ({
     store.fetchUser();
   },
 }));
-
-// Initialize fetch on store creation
-useAuthStore.getState().fetchUser();
 

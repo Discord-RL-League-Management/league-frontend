@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import ProtectedRoute from './components/ProtectedRoute';
-import Login from './pages/Login';
-import AuthCallback from './pages/AuthCallback';
-import Dashboard from './pages/Dashboard';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import ProtectedRoute from './components/ProtectedRoute.tsx';
+import Login from './pages/Login.tsx';
+import AuthCallback from './pages/AuthCallback.tsx';
+import Dashboard from './pages/Dashboard.tsx';
+import { GuildDashboardPage, GuildDashboardRedirect } from './pages/GuildDashboardPage.tsx';
 
 /**
  * App - Single responsibility: Application routing structure only
@@ -22,6 +23,46 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/guild/:guildId"
+            element={
+              <ProtectedRoute>
+                <GuildDashboardRedirect />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/guild/:guildId/overview"
+            element={
+              <ProtectedRoute>
+                <GuildDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/guild/:guildId/admin"
+            element={
+              <ProtectedRoute>
+                <GuildDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/guild/:guildId/members"
+            element={
+              <ProtectedRoute>
+                <GuildDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/guild/:guildId/settings"
+            element={
+              <ProtectedRoute>
+                <GuildDashboardPage />
               </ProtectedRoute>
             }
           />

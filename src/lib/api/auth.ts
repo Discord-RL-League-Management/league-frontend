@@ -3,8 +3,8 @@
  * Handles all authentication-related HTTP calls
  */
 
-import { api } from './client';
-import type { User } from '../../types';
+import { api } from './client.ts';
+import type { User } from '../../types/index.ts';
 
 export const authApi = {
   login: () => {

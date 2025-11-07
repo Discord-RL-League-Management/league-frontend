@@ -1,48 +1,102 @@
 import { create } from 'zustand';
-import { guildApi } from '../lib/api';
-import type { GuildSettingsType } from '../types';
+import { guildApi } from '../lib/api/index.ts';
+import type { GuildSettingsType } from '../types/index.ts';
 
 interface SettingsState {
-  settings: GuildSettingsType | null;
+  settings: Record<string, GuildSettingsType>; // Per-guild settings cache
+  draftSettings: GuildSettingsType | null; // Editable copy for edit mode (current guild only)
   loading: boolean;
   error: string | null;
   pendingUpdates: Set<string>;
+  pendingRequests: Record<string, Promise<void>>; // Track in-flight requests per guild
   loadSettings: (guildId: string) => Promise<void>;
   updateSettings: (guildId: string, updates: Partial<GuildSettingsType>) => Promise<void>;
+  updateDraftSettings: (updates: Partial<GuildSettingsType>) => void;
+  saveDraftSettings: (guildId: string) => Promise<void>;
+  cancelEdit: () => void;
   resetSettings: (guildId: string) => Promise<void>;
   retry: (guildId: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
-  settings: null,
+  settings: {},
+  draftSettings: null,
   loading: false,
   error: null,
   pendingUpdates: new Set(),
+  pendingRequests: {},
 
   loadSettings: async (guildId: string) => {
-    try {
-      set({ error: null, loading: true });
-      const data = await guildApi.getGuildSettings(guildId);
-      set({ settings: data, loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to load settings';
-      set({ error: errorMessage, loading: false });
-      console.error('Error loading settings:', err);
+    // Return cached if exists (don't call set() to avoid triggering re-renders)
+    if (get().settings[guildId]) {
+      return;
     }
+
+    // Check if request already in-flight
+    const existingRequest = get().pendingRequests[guildId];
+    if (existingRequest) {
+      return existingRequest;
+    }
+
+    // Create new request promise
+    const requestPromise = (async () => {
+      try {
+        set({ error: null, loading: true });
+        const data = await guildApi.getGuildSettings(guildId);
+        
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            [guildId]: data,
+          },
+          draftSettings: null,
+          loading: false,
+        }));
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.message || 'Failed to load settings';
+        set({ error: errorMessage, loading: false });
+        console.error('Error loading settings:', err);
+      } finally {
+        // Clean up pending request
+        set((state) => {
+          const { [guildId]: _, ...rest } = state.pendingRequests;
+          return { pendingRequests: rest };
+        });
+      }
+    })();
+
+    // Track pending request
+    set((state) => ({
+      pendingRequests: { ...state.pendingRequests, [guildId]: requestPromise },
+    }));
+
+    return requestPromise;
   },
 
   updateSettings: async (guildId: string, updates: Partial<GuildSettingsType>) => {
     try {
       set({ error: null, loading: true });
       
-      // Store current settings for rollback
-      const previousSettings = get().settings;
+      const currentSettings = get().settings[guildId];
+      if (!currentSettings) {
+        // Load settings first if not cached
+        await get().loadSettings(guildId);
+        const loadedSettings = get().settings[guildId];
+        if (!loadedSettings) {
+          throw new Error('Settings not loaded for this guild');
+        }
+      }
+      
+      const previousSettings = get().settings[guildId];
       
       // Optimistic update
-      const optimisticSettings = previousSettings 
-        ? { ...previousSettings, ...updates } 
-        : updates as GuildSettingsType;
-      set({ settings: optimisticSettings });
+      const optimisticSettings = { ...previousSettings, ...updates };
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          [guildId]: optimisticSettings,
+        },
+      }));
       
       // Track pending update
       const updateId = Date.now().toString();
@@ -61,8 +115,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       });
       
     } catch (err: any) {
-      // Rollback on failure
-      set({ settings: get().settings });
+      // Rollback on failure - reload from server
+      const store = get();
+      await store.loadSettings(guildId);
       const errorMessage = err.response?.data?.message || 'Failed to update settings';
       set({ error: errorMessage });
       throw err;
@@ -71,13 +126,67 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  updateDraftSettings: (updates: Partial<GuildSettingsType>) => {
+    // Note: draftSettings is for the current guild being edited
+    // This should be called with the current guildId context
+    const currentDraft = get().draftSettings;
+    if (!currentDraft) {
+      // If no draft exists, initialize it with the provided updates
+      // This allows handleEdit to initialize the draft by passing allSettings
+      set({ draftSettings: updates as GuildSettingsType });
+      return;
+    }
+    
+    const updatedDraft = { ...currentDraft, ...updates };
+    set({ draftSettings: updatedDraft });
+  },
+
+  saveDraftSettings: async (guildId: string) => {
+    const draft = get().draftSettings;
+    if (!draft) {
+      throw new Error('No draft settings to save');
+    }
+
+    try {
+      set({ error: null, loading: true });
+      
+      // Strip _metadata before sending to API (it's internal-only)
+      const { _metadata, ...settingsToSave } = draft as any;
+      await guildApi.updateGuildSettings(guildId, settingsToSave);
+      
+      // Update settings cache for this guild and clear draft
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          [guildId]: draft,
+        },
+        draftSettings: null,
+        loading: false,
+      }));
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to save settings';
+      set({ error: errorMessage, loading: false });
+      throw err;
+    }
+  },
+
+  cancelEdit: () => {
+    set({ draftSettings: null, error: null });
+  },
+
   resetSettings: async (guildId: string) => {
     try {
       set({ loading: true, error: null });
       await guildApi.resetGuildSettings(guildId);
-      // Reload settings after reset
+      // Clear cache for this guild before reloading to force fresh fetch
+      set((state) => {
+        const { [guildId]: _, ...restSettings } = state.settings;
+        return { settings: restSettings };
+      });
+      // Reload settings after reset and clear draft
       const store = get();
       await store.loadSettings(guildId);
+      set({ draftSettings: null });
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to reset settings';
       set({ error: errorMessage });

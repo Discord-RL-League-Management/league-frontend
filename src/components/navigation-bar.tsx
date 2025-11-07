@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/user-avatar"
@@ -32,7 +33,9 @@ export function NavigationBar({ user, onLogout, className }: NavigationBarProps)
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <h1 className="text-xl font-bold text-foreground">League Management</h1>
+          <Link to="/dashboard" className="text-xl font-bold text-foreground hover:opacity-80 transition-opacity">
+            League Management
+          </Link>
           
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">

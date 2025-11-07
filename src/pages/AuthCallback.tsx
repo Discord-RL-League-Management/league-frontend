@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LoadingState } from '../components/loading-state';
+import { LoadingState } from '../components/loading-state.tsx';
 
 /**
  * AuthCallback - Handle OAuth redirect with HttpOnly cookies
@@ -22,11 +22,16 @@ export default function AuthCallback() {
       return;
     }
     
-    // Cookie is already set by backend
-    // Simply redirect to dashboard
-    // AuthContext will fetch user automatically on mount
-    // ProtectedRoute will show loading state while fetching
-    navigate('/dashboard', { replace: true });
+    // Check if there's a guild context to redirect to
+    const guildId = searchParams.get('guild');
+    
+    if (guildId) {
+      // Redirect to specific guild's settings page
+      navigate(`/dashboard/guild/${guildId}/settings`, { replace: true });
+    } else {
+      // No guild context, go to general dashboard
+      navigate('/dashboard', { replace: true });
+    }
   }, [searchParams, navigate]);
 
   return <LoadingState message="Completing login..." />;

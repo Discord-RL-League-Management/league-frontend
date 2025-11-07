@@ -3,8 +3,8 @@
  * Handles all profile-related HTTP calls
  */
 
-import { api } from './client';
-import type { UserProfile, UserStats, UserSettings } from '../../types';
+import { api } from './client.ts';
+import type { UserProfile, UserStats, UserSettings } from '../../types/index.ts';
 
 export const profileApi = {
   getProfile: async (): Promise<UserProfile> => {

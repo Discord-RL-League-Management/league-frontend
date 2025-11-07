@@ -3,12 +3,12 @@
  * Handles all guild-related HTTP calls
  */
 
-import { api } from './client';
-import type { Guild, GuildDetails, GuildSettingsType } from '../../types';
+import { api } from './client.ts';
+import type { Guild, GuildDetails, GuildSettingsType, DiscordChannel, DiscordRole } from '../../types/index.ts';
 
 export const guildApi = {
   getMyGuilds: async (): Promise<Guild[]> => {
-    const response = await api.get('/api/guilds/my-guilds');
+    const response = await api.get('/auth/guilds');
     return response.data;
   },
 
@@ -40,13 +40,13 @@ export const guildApi = {
   },
 
   // NEW: Get guild channels from Discord API
-  getGuildChannels: async (guildId: string): Promise<any[]> => {
+  getGuildChannels: async (guildId: string): Promise<DiscordChannel[]> => {
     const response = await api.get(`/api/guilds/${guildId}/channels`);
     return response.data;
   },
 
   // NEW: Get guild roles from Discord API
-  getGuildRoles: async (guildId: string): Promise<any[]> => {
+  getGuildRoles: async (guildId: string): Promise<DiscordRole[]> => {
     const response = await api.get(`/api/guilds/${guildId}/roles`);
     return response.data;
   },
@@ -76,6 +76,18 @@ export const guildApi = {
     const response = await api.get(`/api/guilds/${guildId}/members/search`, {
       params: { q: query, page, limit },
     });
+    return response.data;
+  },
+
+  /**
+   * Get guild member statistics
+   */
+  getMemberStats: async (guildId: string): Promise<{
+    totalMembers: number;
+    activeMembers: number;
+    newThisWeek: number;
+  }> => {
+    const response = await api.get(`/api/guilds/${guildId}/members/stats`);
     return response.data;
   },
 };

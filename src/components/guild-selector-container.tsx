@@ -1,14 +1,10 @@
 import { useEffect } from 'react'
-import { GuildList } from './guild-list'
-import { LoadingState } from './loading-state'
-import { ErrorDisplay } from './error-display'
-import { useGuildStore } from '../stores'
-import type { Guild } from '../types'
-
-interface GuildSelectorContainerProps {
-  onGuildSelect: (guild: Guild) => void
-  selectedGuildId?: string
-}
+import { useNavigate } from 'react-router-dom'
+import { GuildList } from './guild-list.tsx'
+import { LoadingState } from './loading-state.tsx'
+import { ErrorDisplay } from './error-display.tsx'
+import { useGuildStore } from '../stores/index.ts'
+import type { Guild } from '../types/index.ts'
 
 /**
  * GuildSelectorContainer - Single responsibility: Handle guild data fetching
@@ -16,15 +12,17 @@ interface GuildSelectorContainerProps {
  * Handles API calls, loading, error states
  * Clear boundary between data and UI
  */
-export function GuildSelectorContainer({ 
-  onGuildSelect, 
-  selectedGuildId 
-}: GuildSelectorContainerProps) {
+export function GuildSelectorContainer() {
   const { guilds, loading, error, fetchGuilds, retry } = useGuildStore()
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchGuilds()
   }, [fetchGuilds])
+
+  const handleGuildSelect = (guild: Guild) => {
+    navigate(`/dashboard/guild/${guild.id}/overview`)
+  }
 
   if (loading) {
     return <LoadingState message="Loading guilds..." />
@@ -37,8 +35,8 @@ export function GuildSelectorContainer({
   return (
     <GuildList 
       guilds={guilds}
-      selectedGuildId={selectedGuildId}
-      onGuildSelect={onGuildSelect}
+      selectedGuildId={undefined}
+      onGuildSelect={handleGuildSelect}
     />
   )
 }

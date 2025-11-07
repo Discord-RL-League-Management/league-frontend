@@ -24,10 +24,13 @@ export interface UserProfile {
 }
 
 export interface UserStats {
+  userId: string;
   gamesPlayed: number;
   wins: number;
   losses: number;
   winRate: number;
+  guildsCount: number;
+  activeGuildsCount: number;
 }
 
 export interface UserSettings {

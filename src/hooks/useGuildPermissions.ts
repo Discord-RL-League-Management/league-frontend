@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { usePermissionStore } from '../stores/permissionStore';
-import type { Permission } from '../types/permissions';
+import { usePermissionStore } from '../stores/permissionStore.ts';
+import type { Permission } from '../types/permissions.ts';
 
 /**
  * useGuildPermissions Hook - Composition: Compose store functionality
@@ -9,21 +9,30 @@ import type { Permission } from '../types/permissions';
  * Provides convenient interface for components.
  */
 export function useGuildPermissions(guildId: string | null) {
-  const store = usePermissionStore();
+  // Zustand stores are stable - don't include in dependency arrays
+  // Use selector pattern to get only what we need for reactivity
+  const fetchPermissions = usePermissionStore((state) => state.fetchPermissions);
+  const isAdmin = guildId ? usePermissionStore((state) => state.isAdmin(guildId)) : false;
+  const isMember = guildId ? usePermissionStore((state) => state.permissions[guildId]?.isMember) : false;
+  const hasPermissionFn = usePermissionStore((state) => state.hasPermission);
+  const loading = usePermissionStore((state) => state.loading);
+  const error = usePermissionStore((state) => state.error);
 
   useEffect(() => {
     if (guildId) {
-      store.fetchPermissions(guildId);
+      fetchPermissions(guildId);
     }
-  }, [guildId, store]);
+    // Only depend on guildId and fetchPermissions function
+    // fetchPermissions from Zustand store is stable
+  }, [guildId, fetchPermissions]);
 
   return {
-    isAdmin: guildId ? store.isAdmin(guildId) : false,
-    isMember: guildId ? store.permissions[guildId]?.isMember : false,
+    isAdmin,
+    isMember,
     hasPermission: (permission: Permission) =>
-      guildId ? store.hasPermission(guildId, permission) : false,
-    loading: store.loading,
-    error: store.error,
+      guildId ? hasPermissionFn(guildId, permission) : false,
+    loading,
+    error,
   };
 }
 

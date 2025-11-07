@@ -29,19 +29,20 @@ export type Permission =
 
 /**
  * Audit Log - Single audit log entry
+ * Now uses ActivityLog from backend (generic activity logging)
  */
 export interface AuditLog {
   id: string;
-  userId: string | null;
-  guildId: string | null;
+  entityType: string;
+  entityId: string;
+  eventType: string;
   action: string;
-  resource: string;
-  result: 'allowed' | 'denied';
+  userId?: string | null;
+  guildId?: string | null;
+  changes?: Record<string, any>;
   metadata?: Record<string, any>;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  requestId?: string | null;
-  createdAt: string;
+  timestamp: string;
+  // Computed fields for display
   user?: {
     id: string;
     username: string;
@@ -70,4 +71,13 @@ export interface PaginatedResult<T> {
   limit: number;
   offset: number;
 }
+
+
+
+
+
+
+
+
+
 

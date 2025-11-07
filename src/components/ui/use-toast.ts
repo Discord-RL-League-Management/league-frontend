@@ -166,15 +166,19 @@ function toast({ ...props }: Toast) {
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
+  // Register listener on mount, remove on unmount
+  // setState is stable, so empty deps array is correct
   React.useEffect(() => {
     listeners.push(setState)
+    // Sync initial state
+    setState(memoryState)
     return () => {
       const index = listeners.indexOf(setState)
       if (index > -1) {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
   return {
     ...state,

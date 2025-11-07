@@ -1,6 +1,4 @@
-export { FeaturesTab } from './FeaturesTab';
-export { ChannelsTab } from './ChannelsTab';
-export { RolesTab } from './RolesTab';
-export { PermissionsTab } from './PermissionsTab';
-export { DisplayTab } from './DisplayTab';
+export { BotCommandChannelsSection } from './BotCommandChannelsSection.tsx';
+export { RegisterCommandChannelsSection } from './RegisterCommandChannelsSection.tsx';
+export { AuditLogTab } from './AuditLogTab.tsx';
 

@@ -5,8 +5,8 @@
  * No business logic, just API communication.
  */
 
-import { api } from './client';
-import type { PermissionState } from '../../types/permissions';
+import { api } from './client.ts';
+import type { PermissionState } from '../../types/permissions.ts';
 
 export const permissionApi = {
   getMyPermissions: async (guildId: string): Promise<PermissionState> => {

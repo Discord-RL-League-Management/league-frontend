@@ -1,38 +1,47 @@
-import type { Guild } from '../types';
+import type { Guild } from '../types/index.ts';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { GuildAvatar } from '@/components/guild-avatar';
-import { ArrowLeft } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import GuildConfiguration from '@/components/GuildConfiguration';
 import MemberList from '@/components/MemberList';
-import { useState } from 'react';
-import { useGuildPermissions } from '../hooks/useGuildPermissions';
+import Overview from '@/components/Overview';
+import AdminDashboard from '@/components/AdminDashboard';
+import { useGuildPermissions } from '../hooks/useGuildPermissions.ts';
 
 interface GuildDashboardProps {
   guild: Guild;
-  onBack: () => void;
 }
 
 /**
  * Guild Dashboard Component
- * Single Responsibility: Display guild-specific information and management
- * Separation of Concerns: Component uses hook, doesn't fetch data
+ * Single Responsibility: Display guild-specific information and management based on URL state
+ * Separation of Concerns: Component uses hook, doesn't fetch data; routing handled by parent
  */
-export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
-  const [activeTab, setActiveTab] = useState('overview');
+export default function GuildDashboard({ guild }: GuildDashboardProps) {
   const { isAdmin, loading } = useGuildPermissions(guild.id);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Extract active tab from URL path
+  const activeTab = location.pathname.split('/').pop() || 'overview';
+
+  const handleTabNavigate = (tab: string) => {
+    navigate(`/dashboard/guild/${guild.id}/${tab}`);
+  };
 
   return (
     <div className="space-y-6">
       {/* Back Button */}
       <Button
         variant="ghost"
-        onClick={onBack}
+        asChild
         className="flex items-center gap-2"
       >
-        <ArrowLeft className="h-4 w-4" />
-        Back to servers
+        <Link to="/dashboard">
+          Back to servers
+        </Link>
       </Button>
 
       {/* Guild Header */}
@@ -50,91 +59,58 @@ export default function GuildDashboard({ guild, onBack }: GuildDashboardProps) {
         </CardHeader>
       </Card>
 
-      {/* Tab Navigation */}
-      {isAdmin && (
-        <div className="flex space-x-1 mb-6 bg-muted p-1 rounded-lg">
-          <Button
-            variant={activeTab === 'overview' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('overview')}
-            className="flex-1"
-          >
-            Overview
-          </Button>
-          <Button
-            variant={activeTab === 'members' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('members')}
-            className="flex-1"
-          >
-            Members
-          </Button>
-          <Button
-            variant={activeTab === 'settings' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('settings')}
-            className="flex-1"
-          >
-            Settings
-          </Button>
-        </div>
-      )}
+      {/* Tab Navigation - Overview for everyone */}
+      <div className="flex space-x-1 mb-6 bg-muted p-1 rounded-lg">
+        <Button
+          variant={activeTab === 'overview' ? 'default' : 'ghost'}
+          onClick={() => handleTabNavigate('overview')}
+          className="flex-1"
+        >
+          Overview
+        </Button>
+        
+        {/* Admin-only tabs */}
+        {isAdmin && (
+          <>
+            <Button
+              variant={activeTab === 'admin' ? 'default' : 'ghost'}
+              onClick={() => handleTabNavigate('admin')}
+              className="flex-1"
+            >
+              Admin Dashboard
+            </Button>
+            <Button
+              variant={activeTab === 'members' ? 'default' : 'ghost'}
+              onClick={() => handleTabNavigate('members')}
+              className="flex-1"
+            >
+              Members
+            </Button>
+            <Button
+              variant={activeTab === 'settings' ? 'default' : 'ghost'}
+              onClick={() => handleTabNavigate('settings')}
+              className="flex-1"
+            >
+              Settings
+            </Button>
+          </>
+        )}
+      </div>
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Settings Card */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-bold text-foreground">Settings</h2>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Guild configuration and bot settings will be available here.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Members Card */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-bold text-foreground">Members</h2>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Member management and role assignments will be available here.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Leagues Card */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-bold text-foreground">Leagues</h2>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              League creation and management will be available here.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Statistics Card */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-bold text-foreground">Statistics</h2>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Guild statistics and activity metrics will be available here.
-            </p>
-          </CardContent>
-        </Card>
-        </div>
+        <Overview guildId={guild.id} />
       )}
 
-      {activeTab === 'members' && (
+      {activeTab === 'admin' && isAdmin && (
+        <AdminDashboard guildId={guild.id} />
+      )}
+
+      {activeTab === 'members' && isAdmin && (
         <MemberList guildId={guild.id} />
       )}
 
-      {activeTab === 'settings' && (
+      {activeTab === 'settings' && isAdmin && (
         <GuildConfiguration guildId={guild.id} />
       )}
     </div>

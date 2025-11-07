@@ -5,12 +5,12 @@
  * No business logic, just API communication.
  */
 
-import { api } from './client';
+import { api } from './client.ts';
 import type {
   AuditLog,
   AuditLogFilters,
   PaginatedResult,
-} from '../../types/permissions';
+} from '../../types/permissions.ts';
 
 export const auditApi = {
   getGuildAuditLogs: async (

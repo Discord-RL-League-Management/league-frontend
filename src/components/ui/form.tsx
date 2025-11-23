@@ -2,8 +2,8 @@ import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils.js"
+import { Label } from "@/components/ui/label.js"
 
 const useFormField = () => {
   const itemContext = React.useContext(FormItemContext)

@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent, CardHeader } from '@/components/ui/card.js';
+import { Alert, AlertDescription } from '@/components/ui/alert.js';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {

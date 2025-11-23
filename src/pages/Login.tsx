@@ -1,6 +1,6 @@
 import { useAuthStore } from '../stores/index.ts'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button.js'
+import { Card, CardContent, CardHeader } from '@/components/ui/card.js'
 
 /**
  * Login Page - Single responsibility: Display login UI only

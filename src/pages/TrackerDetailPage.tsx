@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { TrackerDetail } from '../components/tracker-detail/TrackerDetail';
+import { TrackerDetail } from '../components/tracker-detail/TrackerDetail.js';
 
 export default function TrackerDetailPage() {
   const { trackerId } = useParams<{ trackerId: string }>();

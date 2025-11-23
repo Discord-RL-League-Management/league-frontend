@@ -1,5 +1,5 @@
-import { LoadingSpinner } from "@/components/loading-spinner"
-import { cn } from "@/lib/utils"
+import { LoadingSpinner } from "@/components/loading-spinner.js"
+import { cn } from "@/lib/utils.js"
 
 interface LoadingStateProps {
   message?: string

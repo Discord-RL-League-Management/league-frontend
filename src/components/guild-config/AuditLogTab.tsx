@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { auditApi } from '../../lib/api/audit.ts';
 import type { AuditLog, AuditLogFilters } from '../../types/permissions.ts';
-import { LoadingSpinner } from '@/components/loading-spinner';
-import { ErrorDisplay } from '@/components/error-display';
-import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/loading-spinner.js';
+import { ErrorDisplay } from '@/components/error-display.js';
 
 interface AuditLogTabProps {
   guildId: string;
@@ -18,7 +17,7 @@ const AuditLogTabComponent = ({ guildId }: AuditLogTabProps) => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<AuditLogFilters>({
+  const [filters] = useState<AuditLogFilters>({
     limit: 50,
     offset: 0,
   });

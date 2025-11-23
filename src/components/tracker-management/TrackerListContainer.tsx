@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useTrackersStore } from '@/stores/trackersStore';
-import { TrackerList } from './TrackerList';
-import { TrackerEditModal } from './TrackerEditModal';
+import { useTrackersStore } from '@/stores/trackersStore.js';
+import { TrackerList } from './TrackerList.js';
+import { TrackerEditModal } from './TrackerEditModal.js';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,9 +11,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Tracker } from '@/types/trackers.ts';
+} from '@/components/ui/alert-dialog.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import type { Tracker } from '@/types/trackers.js';
 
 interface TrackerListContainerProps {
   guildId?: string;
@@ -30,7 +30,7 @@ export function TrackerListContainer({ guildId }: TrackerListContainerProps) {
     fetchTrackers,
     updateTracker,
     deleteTracker,
-    clearError,
+    getMyTrackers,
   } = useTrackersStore();
 
   const [editingTracker, setEditingTracker] = useState<Tracker | null>(null);
@@ -57,6 +57,10 @@ export function TrackerListContainer({ guildId }: TrackerListContainerProps) {
 
     try {
       await deleteTracker(deletingTracker.id);
+      // Refresh myTrackers if no guildId (showing user's own trackers)
+      if (!guildId) {
+        await getMyTrackers();
+      }
       setIsDeleteDialogOpen(false);
       setDeletingTracker(null);
     } catch (err) {

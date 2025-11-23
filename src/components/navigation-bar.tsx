@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { UserAvatar } from "@/components/user-avatar"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button.js"
+import { Badge } from "@/components/ui/badge.js"
+import { UserAvatar } from "@/components/user-avatar.js"
+import { cn } from "@/lib/utils.js"
 
 interface User {
   id: string

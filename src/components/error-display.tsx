@@ -1,5 +1,5 @@
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert.js"
+import { Button } from "@/components/ui/button.js"
 import { AlertTriangle } from "lucide-react"
 
 interface ErrorDisplayProps {

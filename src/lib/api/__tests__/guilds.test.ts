@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { guildApi } from '../guilds';
-import { frontendFixtures } from '../../../test/fixtures/member.fixtures';
+import { guildApi } from '../guilds.js';
+import { frontendFixtures } from '../../../test/fixtures/member.fixtures.js';
 
 // Mock axios
 jest.mock('axios');

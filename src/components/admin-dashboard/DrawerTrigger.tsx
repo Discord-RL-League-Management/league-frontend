@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button.js';
 import { BarChart3 } from 'lucide-react';
 
 interface DrawerTriggerProps {

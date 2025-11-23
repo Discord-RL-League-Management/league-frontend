@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { guildApi } from '../lib/api/guilds';
-import type { DiscordChannel } from '../types/discord';
+import { guildApi } from '../lib/api/guilds.js';
+import type { DiscordChannel } from '../types/discord.js';
 
 interface ChannelsState {
   channels: Record<string, DiscordChannel[]>; // Per-guild channels cache

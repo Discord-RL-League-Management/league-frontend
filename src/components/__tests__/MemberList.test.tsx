@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import MemberList from '../MemberList';
-import { renderWithProviders, mockGuildApi, frontendFixtures } from '../../test/utils/test-helpers';
+import MemberList from '../MemberList.js';
+import { renderWithProviders, mockGuildApi, frontendFixtures } from '../../test/utils/test-helpers.js';
 
 // Mock the guild API
 jest.mock('@/lib/api/guilds', () => ({

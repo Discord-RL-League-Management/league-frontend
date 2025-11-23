@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard.tsx';
 import { GuildDashboardPage, GuildDashboardRedirect } from './pages/GuildDashboardPage.tsx';
 import TrackerDetailPage from './pages/TrackerDetailPage.tsx';
 import TrackerRegistrationPage from './pages/TrackerRegistrationPage.tsx';
+import MyTrackersPage from './pages/MyTrackersPage.tsx';
 
 /**
  * App - Single responsibility: Application routing structure only
@@ -81,6 +82,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <TrackerRegistrationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/trackers"
+            element={
+              <ProtectedRoute>
+                <MyTrackersPage />
               </ProtectedRoute>
             }
           />

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ErrorDisplay } from '@/components/error-display';
-import { useMembersStore } from '@/stores/membersStore';
-import { useChannelsStore } from '@/stores/channelsStore';
-import { guildApi } from '@/lib/api/guilds';
-import { MetricsDrawer } from './admin-dashboard/MetricsDrawer';
-import { DrawerTrigger } from './admin-dashboard/DrawerTrigger';
+import { ErrorDisplay } from '@/components/error-display.js';
+import { useMembersStore } from '@/stores/membersStore.js';
+import { useChannelsStore } from '@/stores/channelsStore.js';
+import { guildApi } from '@/lib/api/guilds.js';
+import { MetricsDrawer } from './admin-dashboard/MetricsDrawer.js';
+import { DrawerTrigger } from './admin-dashboard/DrawerTrigger.js';
 
 interface AdminDashboardProps {
   guildId: string;

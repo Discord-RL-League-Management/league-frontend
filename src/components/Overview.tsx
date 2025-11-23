@@ -1,20 +1,20 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { ErrorDisplay } from '@/components/error-display';
-import { UserAvatar } from '@/components/user-avatar';
-import { profileApi } from '@/lib/api/profile';
-import { guildApi } from '@/lib/api/guilds';
-import { useAuthStore } from '@/stores/authStore';
-import { useGuildPermissions } from '@/hooks/useGuildPermissions';
-import { useTrackersStore } from '@/stores/trackersStore';
-import { TrackerRegistrationForm } from '@/components/tracker-registration/TrackerRegistrationForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Skeleton } from '@/components/ui/skeleton.js';
+import { Badge } from '@/components/ui/badge.js';
+import { ErrorDisplay } from '@/components/error-display.js';
+import { UserAvatar } from '@/components/user-avatar.js';
+import { profileApi } from '@/lib/api/profile.js';
+import { guildApi } from '@/lib/api/guilds.js';
+import { useAuthStore } from '@/stores/authStore.js';
+import { useGuildPermissions } from '@/hooks/useGuildPermissions.js';
+import { useTrackersStore } from '@/stores/trackersStore.js';
+import { TrackerRegistrationForm } from '@/components/tracker-registration/TrackerRegistrationForm.js';
 import { Gamepad2, Trophy, Users, TrendingUp, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { UserProfile, UserStats } from '@/types';
-import type { DiscordRole } from '@/types/discord';
-import type { Member } from '@/stores/membersStore';
+import type { UserProfile, UserStats } from '@/types/index.js';
+import type { DiscordRole } from '@/types/discord.js';
+import type { Member } from '@/stores/membersStore.js';
 
 interface OverviewProps {
   guildId: string;
@@ -37,14 +37,14 @@ export default function Overview({ guildId }: OverviewProps) {
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [userMembership, setUserMembership] = useState<Member | null>(null);
   const [membershipLoading, setMembershipLoading] = useState(false);
-  const { myTracker, getMyTracker, loading: trackerLoading } = useTrackersStore();
+  const { myTrackers, getMyTrackers, loading: trackerLoading } = useTrackersStore();
 
-  // Fetch current user's tracker
+  // Fetch current user's trackers
   useEffect(() => {
     if (user?.id) {
-      getMyTracker();
+      getMyTrackers();
     }
-  }, [user?.id, getMyTracker]);
+  }, [user?.id, getMyTrackers]);
 
   // Fetch current user's membership directly
   useEffect(() => {
@@ -292,58 +292,80 @@ export default function Overview({ guildId }: OverviewProps) {
       {/* Tracker Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Tracker</CardTitle>
+          <CardTitle>Your Trackers ({myTrackers.length}/4)</CardTitle>
         </CardHeader>
         <CardContent>
           {trackerLoading ? (
             <Skeleton className="h-32" />
-          ) : myTracker ? (
+          ) : myTrackers.length > 0 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">{myTracker.username}</h3>
-                  <p className="text-sm text-muted-foreground">{myTracker.platform}</p>
+              {myTrackers.map((tracker) => (
+                <div key={tracker.id} className="space-y-4 border-b pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">{tracker.username}</h3>
+                      <p className="text-sm text-muted-foreground">{tracker.platform}</p>
+                    </div>
+                    <Badge
+                      variant={
+                        tracker.scrapingStatus === 'COMPLETED'
+                          ? 'default'
+                          : tracker.scrapingStatus === 'IN_PROGRESS'
+                          ? 'secondary'
+                          : tracker.scrapingStatus === 'FAILED'
+                          ? 'destructive'
+                          : 'outline'
+                      }
+                    >
+                      {tracker.scrapingStatus}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {tracker.lastScrapedAt && (
+                      <span>
+                        Last updated: {new Date(tracker.lastScrapedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    {tracker.seasons && tracker.seasons.length > 0 && (
+                      <span>{tracker.seasons.length} seasons tracked</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Link
+                      to={`/dashboard/tracker/${tracker.id}`}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                    >
+                      View Details
+                    </Link>
+                    <a
+                      href={tracker.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm flex items-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View on Tracker.gg
+                    </a>
+                  </div>
                 </div>
-                <Badge
-                  variant={
-                    myTracker.scrapingStatus === 'COMPLETED'
-                      ? 'default'
-                      : myTracker.scrapingStatus === 'IN_PROGRESS'
-                      ? 'secondary'
-                      : myTracker.scrapingStatus === 'FAILED'
-                      ? 'destructive'
-                      : 'outline'
-                  }
-                >
-                  {myTracker.scrapingStatus}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {myTracker.lastScrapedAt && (
-                  <span>
-                    Last updated: {new Date(myTracker.lastScrapedAt).toLocaleDateString()}
-                  </span>
-                )}
-                {myTracker.seasons && myTracker.seasons.length > 0 && (
-                  <span>{myTracker.seasons.length} seasons tracked</span>
-                )}
-              </div>
-              <div className="flex gap-2">
+              ))}
+              {myTrackers.length < 4 && (
+                <div className="pt-4">
+                  <Link
+                    to="/dashboard/trackers"
+                    className="px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm inline-block"
+                  >
+                    Add Another Tracker
+                  </Link>
+                </div>
+              )}
+              <div className="pt-2">
                 <Link
-                  to={`/dashboard/tracker/${myTracker.id}`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  to="/dashboard/trackers"
+                  className="text-sm text-blue-600 hover:text-blue-700"
                 >
-                  View Details
+                  Manage All Trackers →
                 </Link>
-                <a
-                  href={myTracker.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm flex items-center gap-2"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  View on Tracker.gg
-                </a>
               </div>
             </div>
           ) : (

@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import Dashboard from '../Dashboard';
-import { guildApi } from '../../lib/api';
+import Dashboard from '../Dashboard.js';
+import { guildApi } from '../../lib/api/index.js';
 
 // Mock the API
 jest.mock('../../lib/api', () => ({

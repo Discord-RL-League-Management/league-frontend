@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { frontendFixtures } from '../test/fixtures/member.fixtures';
+import { frontendFixtures } from '../fixtures/member.fixtures.js';
 
 /**
  * Frontend Test Setup Utilities
@@ -308,7 +308,7 @@ export const delayReject = (ms: number, error: Error = new Error('Timeout')): Pr
 /**
  * Test helper to create a mock function that resolves after a delay
  */
-export const createDelayedMock = <T>(value: T, delayMs: number = 100): jest.MockedFunction<() => Promise<T>> => {
+export const createDelayedMock = <T extends unknown>(value: T, delayMs: number = 100): jest.MockedFunction<() => Promise<T>> => {
   return jest.fn().mockImplementation(() => delay(delayMs).then(() => value));
 };
 
@@ -322,7 +322,7 @@ export const createDelayedRejectMock = (error: Error, delayMs: number = 100): je
 /**
  * Test helper to create a mock function that resolves/rejects randomly
  */
-export const createRandomMock = <T>(
+export const createRandomMock = <T extends unknown>(
   successValue: T,
   errorValue: Error,
   successRate: number = 0.8
@@ -339,7 +339,7 @@ export const createRandomMock = <T>(
 /**
  * Test helper to create a mock function that fails on first call, succeeds on retry
  */
-export const createRetryMock = <T>(value: T): jest.MockedFunction<() => Promise<T>> => {
+export const createRetryMock = <T extends unknown>(value: T): jest.MockedFunction<() => Promise<T>> => {
   let callCount = 0;
   return jest.fn().mockImplementation(() => {
     callCount++;
@@ -354,7 +354,7 @@ export const createRetryMock = <T>(value: T): jest.MockedFunction<() => Promise<
 /**
  * Test helper to create a mock that returns different values based on input
  */
-export const createConditionalMock = <T>(
+export const createConditionalMock = <T extends unknown>(
   condition: (input: any) => boolean,
   trueValue: T,
   falseValue: T
@@ -380,7 +380,7 @@ export const createConditionalErrorMock = (
 /**
  * Test helper to create a mock that counts calls
  */
-export const createCountingMock = <T>(value: T): jest.MockedFunction<() => Promise<T>> & { callCount: number } => {
+export const createCountingMock = <T extends unknown>(value: T): jest.MockedFunction<() => Promise<T>> & { callCount: number } => {
   let callCount = 0;
   const mockFn = jest.fn().mockImplementation(() => {
     callCount++;
@@ -397,7 +397,7 @@ export const createCountingMock = <T>(value: T): jest.MockedFunction<() => Promi
 /**
  * Test helper to create a mock that tracks all calls
  */
-export const createTrackingMock = <T>(value: T): jest.MockedFunction<(...args: any[]) => Promise<T>> & { calls: any[][] } => {
+export const createTrackingMock = <T extends unknown>(value: T): jest.MockedFunction<(...args: any[]) => Promise<T>> & { calls: any[][] } => {
   const calls: any[][] = [];
   const mockFn = jest.fn().mockImplementation((...args: any[]) => {
     calls.push(args);

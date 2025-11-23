@@ -105,7 +105,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    * Evict oldest cache entry when limit reached
    * Note: This is now handled inline in fetchMembers for better immutability
    */
-  _evictOldest: (guildId: string) => {
+  _evictOldest: (_guildId: string) => {
     // This method is kept for potential future use, but eviction is now handled inline
     // in fetchMembers to ensure proper immutability
   },

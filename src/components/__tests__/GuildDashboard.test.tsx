@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import GuildDashboard from '../GuildDashboard';
-import { renderWithProviders, mockGuildApi, frontendFixtures } from '../../test/utils/test-helpers';
+import GuildDashboard from '../GuildDashboard.js';
+import { renderWithProviders, mockGuildApi, frontendFixtures } from '../../test/utils/test-helpers.js';
 
 // Mock the MemberList component
 jest.mock('../MemberList', () => {

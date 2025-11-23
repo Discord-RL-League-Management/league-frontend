@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Switch } from '@/components/ui/switch.js';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import type { Tracker } from '@/types/trackers.ts';
+} from '@/components/ui/dialog.js';
+import type { Tracker } from '@/types/trackers.js';
 
 interface TrackerEditModalProps {
   tracker: Tracker | null;

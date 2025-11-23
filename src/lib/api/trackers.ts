@@ -8,27 +8,37 @@ import type { Tracker, TrackerDetail, ScrapingStatus } from '../../types/tracker
 
 export const trackerApi = {
   /**
-   * Register a new tracker URL
-   * @param url - Tracker URL
-   * @returns Registered tracker
+   * Register multiple tracker URLs (1-4) for new users
+   * @param urls - Array of tracker URLs
+   * @returns Array of registered trackers
    */
-  registerTracker: async (url: string): Promise<Tracker> => {
-    const response = await api.post('/api/trackers/register', { url });
+  registerTrackers: async (urls: string[]): Promise<Tracker[]> => {
+    const response = await api.post('/api/trackers/register', { urls });
     return response.data;
   },
 
   /**
-   * Get current user's tracker
-   * @returns User's tracker or null if none exists
+   * Add an additional tracker URL (up to 4 total)
+   * @param url - Tracker URL
+   * @returns Added tracker
    */
-  getMyTracker: async (): Promise<Tracker | null> => {
+  addTracker: async (url: string): Promise<Tracker> => {
+    const response = await api.post('/api/trackers/add', { url });
+    return response.data;
+  },
+
+  /**
+   * Get current user's trackers
+   * @returns Array of user's trackers or empty array if none
+   */
+  getMyTrackers: async (): Promise<Tracker[]> => {
     try {
       const response = await api.get('/api/trackers/me');
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
-      // Handle 404 gracefully (no tracker)
+      // Handle 404 gracefully (no trackers)
       if (error.response?.status === 404) {
-        return null;
+        return [];
       }
       throw error;
     }

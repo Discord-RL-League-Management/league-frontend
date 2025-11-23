@@ -4,17 +4,17 @@ import { BotCommandChannelsSection } from './guild-config/BotCommandChannelsSect
 import { RegisterCommandChannelsSection } from './guild-config/RegisterCommandChannelsSection.tsx';
 import { AuditLogTab } from './guild-config/AuditLogTab.tsx';
 import { PermissionGuard } from '../components/PermissionGuard.tsx';
-import { LoadingSpinner } from '@/components/loading-spinner';
-import { ErrorDisplay } from '@/components/error-display';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/loading-spinner.js';
+import { ErrorDisplay } from '@/components/error-display.js';
+import { Button } from '@/components/ui/button.js';
+import { Alert, AlertDescription } from '@/components/ui/alert.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { 
   Accordion, 
   AccordionContent, 
   AccordionItem, 
   AccordionTrigger 
-} from '@/components/ui/accordion';
+} from '@/components/ui/accordion.js';
 
 interface GuildConfigurationProps {
   guildId: string;

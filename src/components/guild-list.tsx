@@ -1,7 +1,7 @@
-import { GuildAvatar } from "@/components/guild-avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { GuildAvatar } from "@/components/guild-avatar.js"
+import { Badge } from "@/components/ui/badge.js"
+import { Card } from "@/components/ui/card.js"
+import { cn } from "@/lib/utils.js"
 
 interface Guild {
   id: string

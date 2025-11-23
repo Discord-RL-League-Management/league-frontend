@@ -1,11 +1,11 @@
-import { ReactNode } from 'react';
+// ReactNode not used, removed
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { MetricsDisplay } from './MetricsDisplay';
+} from '@/components/ui/sheet.js';
+import { MetricsDisplay } from './MetricsDisplay.js';
 
 interface MetricsDrawerProps {
   open: boolean;

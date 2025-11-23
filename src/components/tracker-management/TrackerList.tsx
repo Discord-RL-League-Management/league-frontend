@@ -1,7 +1,7 @@
-import { TrackerCard } from './TrackerCard';
-import { LoadingState } from '@/components/loading-state';
-import { ErrorDisplay } from '@/components/error-display';
-import type { Tracker } from '@/types/trackers.ts';
+import { TrackerCard } from './TrackerCard.js';
+import { LoadingState } from '@/components/loading-state.js';
+import { ErrorDisplay } from '@/components/error-display.js';
+import type { Tracker } from '@/types/trackers.js';
 
 interface TrackerListProps {
   trackers: Tracker[];

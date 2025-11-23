@@ -8,7 +8,7 @@ import type { Tracker, TrackerDetail, ScrapingStatus } from '../types/trackers.t
 interface TrackersState {
   trackers: Tracker[];
   selectedTracker: Tracker | null;
-  myTracker: Tracker | null;
+  myTrackers: Tracker[];
   trackerDetail: TrackerDetail | null;
   scrapingStatus: ScrapingStatus | null;
   loading: boolean;
@@ -17,8 +17,9 @@ interface TrackersState {
   // Methods
   fetchTrackers: (guildId?: string) => Promise<void>;
   getTracker: (id: string) => Promise<void>;
-  registerTracker: (url: string) => Promise<void>;
-  getMyTracker: () => Promise<void>;
+  registerTrackers: (urls: string[]) => Promise<void>;
+  addTracker: (url: string) => Promise<void>;
+  getMyTrackers: () => Promise<void>;
   getTrackerDetail: (trackerId: string) => Promise<void>;
   refreshTracker: (trackerId: string) => Promise<void>;
   getScrapingStatus: (trackerId: string) => Promise<void>;
@@ -34,7 +35,7 @@ interface TrackersState {
 export const useTrackersStore = create<TrackersState>((set, get) => ({
   trackers: [],
   selectedTracker: null,
-  myTracker: null,
+  myTrackers: [],
   trackerDetail: null,
   scrapingStatus: null,
   loading: false,
@@ -99,9 +100,10 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       await trackerApi.deleteTracker(id);
       
-      // Remove from trackers list
+      // Remove from trackers list and myTrackers
       set((state) => ({
         trackers: state.trackers.filter((t) => t.id !== id),
+        myTrackers: state.myTrackers.filter((t) => t.id !== id),
         selectedTracker: state.selectedTracker?.id === id ? null : state.selectedTracker,
         loading: false,
       }));
@@ -120,32 +122,50 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
   },
 
   /**
-   * Register a new tracker
+   * Register multiple trackers (1-4) for new users
    */
-  registerTracker: async (url: string) => {
+  registerTrackers: async (urls: string[]) => {
     try {
       set({ error: null, loading: true });
-      const tracker = await trackerApi.registerTracker(url);
-      set({ myTracker: tracker, loading: false });
+      const trackers = await trackerApi.registerTrackers(urls);
+      set({ myTrackers: trackers, loading: false });
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to register tracker';
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to register trackers';
       set({ error: errorMessage, loading: false });
       throw err;
     }
   },
 
   /**
-   * Get current user's tracker
+   * Add an additional tracker (up to 4 total)
    */
-  getMyTracker: async () => {
+  addTracker: async (url: string) => {
     try {
       set({ error: null, loading: true });
-      const tracker = await trackerApi.getMyTracker();
-      set({ myTracker: tracker, loading: false });
+      const tracker = await trackerApi.addTracker(url);
+      set((state) => ({ 
+        myTrackers: [...state.myTrackers, tracker],
+        loading: false 
+      }));
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch tracker';
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to add tracker';
       set({ error: errorMessage, loading: false });
-      console.error('Error fetching my tracker:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Get current user's trackers
+   */
+  getMyTrackers: async () => {
+    try {
+      set({ error: null, loading: true });
+      const trackers = await trackerApi.getMyTrackers();
+      set({ myTrackers: trackers, loading: false });
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch trackers';
+      set({ error: errorMessage, loading: false });
+      console.error('Error fetching my trackers:', err);
     }
   },
 

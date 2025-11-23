@@ -1,13 +1,13 @@
 import type { Guild } from '../types/index.ts';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { GuildAvatar } from '@/components/guild-avatar';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
+import { GuildAvatar } from '@/components/guild-avatar.js';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import GuildConfiguration from '@/components/GuildConfiguration';
-import MemberList from '@/components/MemberList';
-import Overview from '@/components/Overview';
-import AdminDashboard from '@/components/AdminDashboard';
+import GuildConfiguration from '@/components/GuildConfiguration.js';
+import MemberList from '@/components/MemberList.js';
+import Overview from '@/components/Overview.js';
+import AdminDashboard from '@/components/AdminDashboard.js';
 import { useGuildPermissions } from '../hooks/useGuildPermissions.ts';
 
 interface GuildDashboardProps {

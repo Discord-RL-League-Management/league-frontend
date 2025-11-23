@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
-import { useMembersStore } from '@/stores/membersStore.ts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.tsx';
-import { Input } from '@/components/ui/input.tsx';
-import { Button } from '@/components/ui/button.tsx';
-import { LoadingState } from '@/components/loading-state.tsx';
-import { ErrorDisplay } from '@/components/error-display.tsx';
-import { UserAvatar } from '@/components/user-avatar.tsx';
-import { useDebounce } from '@/hooks/useDebounce.ts';
-import type { Member } from '@/stores/membersStore.ts';
+import { useMembersStore } from '@/stores/membersStore.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button.js';
+import { LoadingState } from '@/components/loading-state.js';
+import { ErrorDisplay } from '@/components/error-display.js';
+import { UserAvatar } from '@/components/user-avatar.js';
+import { useDebounce } from '@/hooks/useDebounce.js';
+import type { Member } from '@/stores/membersStore.js';
 
 interface MemberListProps {
   guildId: string;

@@ -1,11 +1,11 @@
 import { useEffect, memo, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { useSettingsStore, useChannelsStore } from '@/stores';
-import type { DiscordChannel } from '@/types';
-import { Checkbox } from '@/components/ui/checkbox';
-import { LoadingSpinner } from '@/components/loading-spinner';
-import { ErrorDisplay } from '@/components/error-display';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Label } from '@/components/ui/label.js';
+import { useSettingsStore, useChannelsStore } from '@/stores/index.js';
+import type { DiscordChannel } from '@/types/index.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import { LoadingSpinner } from '@/components/loading-spinner.js';
+import { ErrorDisplay } from '@/components/error-display.js';
 
 interface RegisterCommandChannelsSectionProps {
   guildId: string;
@@ -48,7 +48,7 @@ const RegisterCommandChannelsSectionComponent = ({ guildId, isEditMode = false }
     
     // Get selectable channels (text or announcement channels only, not categories)
     const selectableChannels = discordChannels.filter(
-      ch => (ch.type === GUILD_TEXT || ch.type === GUILD_ANNOUNCEMENT) && ch.type !== GUILD_CATEGORY
+      ch => ch.type === GUILD_TEXT || ch.type === GUILD_ANNOUNCEMENT
     );
 
     // Group selectable channels by parent category

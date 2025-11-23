@@ -11,7 +11,7 @@ export interface Guild {
 }
 
 // Import settings types from settings.ts
-import type { GuildSettingsType } from './settings';
+import type { GuildSettingsType } from './settings.js';
 
 export interface GuildDetails extends Guild {
   settings?: GuildSettingsType;

@@ -1,7 +1,7 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { UserAvatar } from '@/components/user-avatar';
-import type { Tracker } from '@/types/trackers.ts';
+import { Badge } from '@/components/ui/badge.js';
+import { Button } from '@/components/ui/button.js';
+import { UserAvatar } from '@/components/user-avatar.js';
+import type { Tracker } from '@/types/trackers.js';
 import { Edit2, Trash2, ExternalLink } from 'lucide-react';
 
 interface TrackerCardProps {

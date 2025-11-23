@@ -1,4 +1,4 @@
-import { TrackerRegistrationForm } from '../components/tracker-registration/TrackerRegistrationForm';
+import { TrackerRegistrationForm } from '../components/tracker-registration/TrackerRegistrationForm.js';
 
 export default function TrackerRegistrationPage() {
   return (

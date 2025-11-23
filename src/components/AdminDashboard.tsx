@@ -5,7 +5,6 @@ import { useChannelsStore } from '@/stores/channelsStore';
 import { guildApi } from '@/lib/api/guilds';
 import { MetricsDrawer } from './admin-dashboard/MetricsDrawer';
 import { DrawerTrigger } from './admin-dashboard/DrawerTrigger';
-import { RegistrationSection } from './admin-dashboard/RegistrationSection';
 
 interface AdminDashboardProps {
   guildId: string;
@@ -148,9 +147,6 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
           }}
         />
       )}
-
-      {/* Registration Queue Section */}
-      <RegistrationSection guildId={guildId} />
 
       {/* Metrics Drawer */}
       <MetricsDrawer

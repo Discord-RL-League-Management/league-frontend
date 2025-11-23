@@ -9,5 +9,4 @@ export * from './permissionStore.ts';
 export * from './settingsStore.ts';
 export * from './channelsStore.ts';
 export * from './membersStore.ts';
-export * from './registrationsStore.ts';
 

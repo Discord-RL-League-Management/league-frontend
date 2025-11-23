@@ -5,6 +5,8 @@ import Login from './pages/Login.tsx';
 import AuthCallback from './pages/AuthCallback.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import { GuildDashboardPage, GuildDashboardRedirect } from './pages/GuildDashboardPage.tsx';
+import TrackerDetailPage from './pages/TrackerDetailPage.tsx';
+import TrackerRegistrationPage from './pages/TrackerRegistrationPage.tsx';
 
 /**
  * App - Single responsibility: Application routing structure only
@@ -63,6 +65,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <GuildDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/tracker/:trackerId"
+            element={
+              <ProtectedRoute>
+                <TrackerDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/tracker/register"
+            element={
+              <ProtectedRoute>
+                <TrackerRegistrationPage />
               </ProtectedRoute>
             }
           />

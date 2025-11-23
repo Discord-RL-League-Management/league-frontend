@@ -8,7 +8,10 @@ import { profileApi } from '@/lib/api/profile';
 import { guildApi } from '@/lib/api/guilds';
 import { useAuthStore } from '@/stores/authStore';
 import { useGuildPermissions } from '@/hooks/useGuildPermissions';
-import { Gamepad2, Trophy, Users, TrendingUp } from 'lucide-react';
+import { useTrackersStore } from '@/stores/trackersStore';
+import { TrackerRegistrationForm } from '@/components/tracker-registration/TrackerRegistrationForm';
+import { Gamepad2, Trophy, Users, TrendingUp, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { UserProfile, UserStats } from '@/types';
 import type { DiscordRole } from '@/types/discord';
 import type { Member } from '@/stores/membersStore';
@@ -34,6 +37,14 @@ export default function Overview({ guildId }: OverviewProps) {
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [userMembership, setUserMembership] = useState<Member | null>(null);
   const [membershipLoading, setMembershipLoading] = useState(false);
+  const { myTracker, getMyTracker, loading: trackerLoading } = useTrackersStore();
+
+  // Fetch current user's tracker
+  useEffect(() => {
+    if (user?.id) {
+      getMyTracker();
+    }
+  }, [user?.id, getMyTracker]);
 
   // Fetch current user's membership directly
   useEffect(() => {
@@ -277,6 +288,69 @@ export default function Overview({ guildId }: OverviewProps) {
           />
         </div>
       </div>
+
+      {/* Tracker Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Tracker</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {trackerLoading ? (
+            <Skeleton className="h-32" />
+          ) : myTracker ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold">{myTracker.username}</h3>
+                  <p className="text-sm text-muted-foreground">{myTracker.platform}</p>
+                </div>
+                <Badge
+                  variant={
+                    myTracker.scrapingStatus === 'COMPLETED'
+                      ? 'default'
+                      : myTracker.scrapingStatus === 'IN_PROGRESS'
+                      ? 'secondary'
+                      : myTracker.scrapingStatus === 'FAILED'
+                      ? 'destructive'
+                      : 'outline'
+                  }
+                >
+                  {myTracker.scrapingStatus}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {myTracker.lastScrapedAt && (
+                  <span>
+                    Last updated: {new Date(myTracker.lastScrapedAt).toLocaleDateString()}
+                  </span>
+                )}
+                {myTracker.seasons && myTracker.seasons.length > 0 && (
+                  <span>{myTracker.seasons.length} seasons tracked</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  to={`/dashboard/tracker/${myTracker.id}`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                >
+                  View Details
+                </Link>
+                <a
+                  href={myTracker.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  View on Tracker.gg
+                </a>
+              </div>
+            </div>
+          ) : (
+            <TrackerRegistrationForm />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Guild-Specific Information */}
       <Card>

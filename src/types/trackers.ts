@@ -16,41 +16,46 @@ export type GamePlatform = 'STEAM' | 'EPIC' | 'XBL' | 'PSN' | 'SWITCH';
 export type Game = 'ROCKET_LEAGUE';
 
 /**
- * Tracker registration status types
+ * Tracker scraping status types
  */
-export type TrackerRegistrationStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED' | 'FAILED';
+export type TrackerScrapingStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
 /**
- * Tracker registration interface matching API response
+ * Playlist data interface
  */
-export interface TrackerRegistration {
+export interface PlaylistData {
+  rank: string | null;
+  rankValue: number | null;
+  division: string | null;
+  divisionValue: number | null;
+  rating: number | null; // MMR
+  matchesPlayed: number | null;
+  winStreak: number | null;
+}
+
+/**
+ * Tracker season interface
+ */
+export interface TrackerSeason {
   id: string;
-  userId: string;
-  guildId: string;
-  url: string;
-  status: TrackerRegistrationStatus;
-  game?: Game;
-  platform?: GamePlatform;
-  username?: string;
-  displayName?: string;
-  rejectionReason?: string;
+  trackerId: string;
+  seasonNumber: number;
+  seasonName: string | null;
+  playlist1v1: PlaylistData | null;
+  playlist2v2: PlaylistData | null;
+  playlist3v3: PlaylistData | null;
+  playlist4v4: PlaylistData | null;
+  scrapedAt: string;
   createdAt: string;
-  processedAt?: string;
-  processedBy?: string;
-  jobId?: string;
-  user: User;
-  guild: {
-    id: string;
-    name: string;
-  };
-  processedByUser?: User;
-  tracker?: {
-    id: string;
-    url: string;
-    game: Game;
-    platform: GamePlatform;
-    username: string;
-  };
+  updatedAt: string;
+}
+
+/**
+ * Tracker detail interface (tracker with seasons)
+ */
+export interface TrackerDetail {
+  tracker: Tracker;
+  seasons: TrackerSeason[];
 }
 
 /**
@@ -66,9 +71,14 @@ export interface Tracker {
   displayName?: string;
   isActive: boolean;
   isDeleted: boolean;
+  lastScrapedAt: string | null;
+  scrapingStatus: TrackerScrapingStatus;
+  scrapingError: string | null;
+  scrapingAttempts: number;
   createdAt: string;
   updatedAt: string;
   user?: User;
+  seasons?: TrackerSeason[];
   snapshots?: TrackerSnapshot[];
 }
 
@@ -92,14 +102,13 @@ export interface TrackerSnapshot {
 }
 
 /**
- * Queue statistics interface
+ * Scraping status interface
  */
-export interface QueueStats {
-  pending: number;
-  processing: number;
-  completed: number;
-  rejected: number;
-  failed: number;
+export interface ScrapingStatus {
+  status: TrackerScrapingStatus;
+  error: string | null;
+  lastScrapedAt: string | null;
+  attempts: number;
 }
 
 

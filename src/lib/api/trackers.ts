@@ -1,23 +1,32 @@
 /**
  * Tracker API
- * Handles all tracker registration-related HTTP calls
+ * Handles all tracker-related HTTP calls
  */
 
 import { api } from './client.ts';
-import type { TrackerRegistration, Tracker, QueueStats } from '../../types/trackers.ts';
+import type { Tracker, TrackerDetail, ScrapingStatus } from '../../types/trackers.ts';
 
 export const trackerApi = {
   /**
-   * Get next pending registration for a guild
-   * @param guildId - Discord guild ID
-   * @returns Next pending registration or null if none found
+   * Register a new tracker URL
+   * @param url - Tracker URL
+   * @returns Registered tracker
    */
-  getNextRegistration: async (guildId: string): Promise<TrackerRegistration | null> => {
+  registerTracker: async (url: string): Promise<Tracker> => {
+    const response = await api.post('/api/trackers/register', { url });
+    return response.data;
+  },
+
+  /**
+   * Get current user's tracker
+   * @returns User's tracker or null if none exists
+   */
+  getMyTracker: async (): Promise<Tracker | null> => {
     try {
-      const response = await api.get(`/api/trackers/queue/${guildId}/next`);
+      const response = await api.get('/api/trackers/me');
       return response.data;
     } catch (error: any) {
-      // Handle 404 gracefully (no pending registrations)
+      // Handle 404 gracefully (no tracker)
       if (error.response?.status === 404) {
         return null;
       }
@@ -26,70 +35,32 @@ export const trackerApi = {
   },
 
   /**
-   * Get registration by ID
-   * @param registrationId - Registration ID
-   * @returns Registration details
+   * Get tracker detail with all seasons
+   * @param trackerId - Tracker ID
+   * @returns Tracker detail with seasons
    */
-  getRegistration: async (registrationId: string): Promise<TrackerRegistration> => {
-    const response = await api.get(`/api/trackers/queue/${registrationId}`);
+  getTrackerDetail: async (trackerId: string): Promise<TrackerDetail> => {
+    const response = await api.get(`/api/trackers/${trackerId}/detail`);
     return response.data;
   },
 
   /**
-   * Get registration by username for a guild
-   * @param guildId - Discord guild ID
-   * @param username - Discord username
-   * @returns Registration or null if not found
+   * Get scraping status for a tracker
+   * @param trackerId - Tracker ID
+   * @returns Scraping status
    */
-  getRegistrationByUser: async (guildId: string, username: string): Promise<TrackerRegistration | null> => {
-    try {
-      const response = await api.get(`/api/trackers/queue/${guildId}/user/${username}`);
-      return response.data;
-    } catch (error: any) {
-      // Handle 404 gracefully
-      if (error.response?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
-  },
-
-  /**
-   * Get queue statistics for a guild
-   * @param guildId - Discord guild ID
-   * @returns Queue statistics
-   */
-  getQueueStats: async (guildId: string): Promise<QueueStats> => {
-    const response = await api.get(`/api/trackers/queue/${guildId}/stats`);
+  getScrapingStatus: async (trackerId: string): Promise<ScrapingStatus> => {
+    const response = await api.get(`/api/trackers/${trackerId}/status`);
     return response.data;
   },
 
   /**
-   * Process a registration (approve)
-   * @param registrationId - Registration ID
-   * @param displayName - Optional display name for the tracker
-   * @returns Updated registration
+   * Refresh tracker data (trigger scraping)
+   * @param trackerId - Tracker ID
+   * @returns Success message
    */
-  processRegistration: async (
-    registrationId: string,
-    displayName?: string
-  ): Promise<TrackerRegistration> => {
-    const response = await api.post(`/api/trackers/queue/${registrationId}/process`, {
-      displayName,
-    });
-    return response.data;
-  },
-
-  /**
-   * Reject a registration
-   * @param registrationId - Registration ID
-   * @param reason - Reason for rejection
-   * @returns Updated registration
-   */
-  rejectRegistration: async (registrationId: string, reason: string): Promise<TrackerRegistration> => {
-    const response = await api.post(`/api/trackers/queue/${registrationId}/reject`, {
-      reason,
-    });
+  refreshTracker: async (trackerId: string): Promise<{ message: string }> => {
+    const response = await api.post(`/api/trackers/${trackerId}/refresh`);
     return response.data;
   },
 

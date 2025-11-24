@@ -3,6 +3,9 @@ import { render, type RenderOptions } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { frontendFixtures } from '../fixtures/member.fixtures.js';
 
+// Re-export frontendFixtures for use in test files
+export { frontendFixtures };
+
 /**
  * Frontend Test Setup Utilities
  * Helper functions for rendering components with providers and mocking API clients

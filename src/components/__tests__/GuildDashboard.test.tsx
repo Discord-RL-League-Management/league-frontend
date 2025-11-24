@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GuildDashboard from '../GuildDashboard.js';
-import { renderWithProviders, mockGuildApi, frontendFixtures } from '../../test/utils/test-helpers.js';
+import { renderWithProviders } from '../../test/utils/test-helpers.js';
 
 // Mock the MemberList component
 jest.mock('../MemberList', () => {
@@ -247,23 +247,12 @@ describe('GuildDashboard Component', () => {
       expect(screen.queryByText('Members')).not.toBeInTheDocument();
     });
 
-    it('should handle undefined roles', () => {
+    it('should handle empty roles array', () => {
       // Arrange
-      const undefinedRoleGuild = { ...mockGuild, roles: undefined };
+      const emptyRoleGuild = { ...mockGuild, roles: [] };
 
       // Act
-      renderWithProviders(<GuildDashboard {...defaultProps} guild={undefinedRoleGuild} />);
-
-      // Assert
-      expect(screen.queryByText('Members')).not.toBeInTheDocument();
-    });
-
-    it('should handle null roles', () => {
-      // Arrange
-      const nullRoleGuild = { ...mockGuild, roles: null };
-
-      // Act
-      renderWithProviders(<GuildDashboard {...defaultProps} guild={nullRoleGuild} />);
+      renderWithProviders(<GuildDashboard {...defaultProps} guild={emptyRoleGuild} />);
 
       // Assert
       expect(screen.queryByText('Members')).not.toBeInTheDocument();

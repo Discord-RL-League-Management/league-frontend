@@ -110,9 +110,9 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
   const isLoadingMembers = (membersLoading || loadingStats) && totalMembers === null;
   const isLoadingChannels = channelsLoading && totalChannels === 0 && !channelsError;
 
-  // Determine error state
-  const hasMembersError = membersStoreError || membersError;
-  const hasChannelsError = channelsStoreError || channelsError;
+  // Determine error state (convert to boolean for MetricsDrawer)
+  const hasMembersError = !!(membersStoreError || membersError);
+  const hasChannelsError = !!(channelsStoreError || channelsError);
 
   // Calculate channel types (if type property exists)
   const textChannels = channels.filter(ch => 'type' in ch && (ch.type === 0 || ch.type === 5)).length;
@@ -129,18 +129,18 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
       </div>
 
       {/* Error displays */}
-      {hasMembersError && (
+      {(membersStoreError || membersError) && (
         <ErrorDisplay 
-          error={hasMembersError} 
+          error={membersStoreError || membersError || 'Unknown error'} 
           onRetry={() => {
             setMembersError(null);
             fetchMembers(guildId, 1, 20);
           }}
         />
       )}
-      {hasChannelsError && (
+      {(channelsStoreError || channelsError) && (
         <ErrorDisplay 
-          error={hasChannelsError} 
+          error={channelsStoreError || channelsError || 'Unknown error'} 
           onRetry={() => {
             setChannelsError(null);
             fetchChannels(guildId);

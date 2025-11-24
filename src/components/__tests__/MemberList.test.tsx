@@ -1,8 +1,8 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import MemberList from '../MemberList.js';
-import { renderWithProviders, mockGuildApi, frontendFixtures } from '../../test/utils/test-helpers.js';
+import { renderWithProviders, frontendFixtures } from '../../test/utils/test-helpers.js';
+import { guildApi } from '@/lib/api/guilds.js';
 
 // Mock the guild API
 jest.mock('@/lib/api/guilds', () => ({
@@ -14,11 +14,10 @@ jest.mock('@/lib/api/guilds', () => ({
 
 describe('MemberList', () => {
   const mockGuildId = '123456789';
-  let mockGuildApi: any;
+  const mockGuildApi = guildApi as jest.Mocked<typeof guildApi>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGuildApi = mockGuildApi();
   });
 
   describe('Initial load', () => {

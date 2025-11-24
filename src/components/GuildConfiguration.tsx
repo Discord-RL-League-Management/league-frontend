@@ -33,7 +33,6 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
   const saveDraftSettings = useSettingsStore((state) => state.saveDraftSettings);
   const cancelEdit = useSettingsStore((state) => state.cancelEdit);
   const allSettings = useSettingsStore((state) => state.settings[guildId] || null);
-  const draftSettings = useSettingsStore((state) => state.draftSettings);
   const loading = useSettingsStore((state) => state.loading);
   const error = useSettingsStore((state) => state.error);
 

@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosResponse, type AxiosRequestConfig } from 'axios';
+import { navigate } from '../navigation.ts';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -56,8 +57,8 @@ baseApi.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - redirect to login
-      window.location.href = '/login';
+      // Token expired or invalid - redirect to login using React Router
+      navigate('/login', { replace: true });
     }
     
     // Transform error for consistent handling

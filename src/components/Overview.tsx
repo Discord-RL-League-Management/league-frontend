@@ -33,8 +33,6 @@ export default function Overview({ guildId }: OverviewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guildRoles, setGuildRoles] = useState<DiscordRole[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(false);
-  const [rolesError, setRolesError] = useState<string | null>(null);
   const [userMembership, setUserMembership] = useState<Member | null>(null);
   const [membershipLoading, setMembershipLoading] = useState(false);
   const { myTrackers, getMyTrackers, loading: trackerLoading } = useTrackersStore();
@@ -87,8 +85,6 @@ export default function Overview({ guildId }: OverviewProps) {
       if (permissionsLoading) return;
       
       try {
-        setRolesLoading(true);
-        setRolesError(null);
         const roles = await guildApi.getGuildRoles(guildId);
         setGuildRoles(roles);
       } catch (err: any) {
@@ -98,12 +94,8 @@ export default function Overview({ guildId }: OverviewProps) {
           setGuildRoles([]);
         } else {
           // Other errors - log but don't block UI
-          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch roles';
-          setRolesError(errorMessage);
           console.warn('Failed to fetch guild roles:', err);
         }
-      } finally {
-        setRolesLoading(false);
       }
     };
 

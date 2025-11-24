@@ -1,5 +1,10 @@
 import { configure } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
+
+// Polyfill TextEncoder/TextDecoder for Node.js environment
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
 
 // Configure testing library
 configure({ testIdAttribute: 'data-testid' });

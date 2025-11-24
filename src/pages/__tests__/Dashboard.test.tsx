@@ -24,16 +24,18 @@ const mockUser = {
   lastLoginAt: '2023-01-01T00:00:00Z',
 };
 
-const mockAuthContext = {
-  user: mockUser,
-  logout: jest.fn(),
-  login: jest.fn(),
-};
-
-// Mock AuthContext
-jest.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => mockAuthContext,
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+// Mock Zustand auth store
+jest.mock('../../stores/authStore', () => ({
+  useAuthStore: jest.fn((selector) => {
+    const state = {
+      user: mockUser,
+      logout: jest.fn(),
+      login: jest.fn(),
+      loading: false,
+      error: null,
+    };
+    return selector ? selector(state) : state;
+  }),
 }));
 
 describe('Dashboard Integration', () => {

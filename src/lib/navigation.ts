@@ -42,3 +42,5 @@ export function isNavigationInitialized(): boolean {
   return navigateFunction !== null;
 }
 
+
+

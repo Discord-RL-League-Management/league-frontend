@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/index.ts';
 import { BotCommandChannelsSection } from './guild-config/BotCommandChannelsSection.tsx';
 import { RegisterCommandChannelsSection } from './guild-config/RegisterCommandChannelsSection.tsx';
+import { MmrCalculationSection } from './guild-config/MmrCalculationSection.tsx';
 import { AuditLogTab } from './guild-config/AuditLogTab.tsx';
 import { PermissionGuard } from '../components/PermissionGuard.tsx';
 import { LoadingSpinner } from '@/components/loading-spinner.js';
@@ -222,6 +223,14 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
                   <BotCommandChannelsSection guildId={guildId} isEditMode={isEditMode} />
                   <RegisterCommandChannelsSection guildId={guildId} isEditMode={isEditMode} />
                 </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="mmr" className="border rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
+                MMR Calculation
+              </AccordionTrigger>
+              <AccordionContent className="pt-4 pb-6">
+                <MmrCalculationSection guildId={guildId} isEditMode={isEditMode} />
               </AccordionContent>
             </AccordionItem>
           </Accordion>

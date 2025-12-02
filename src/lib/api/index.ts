@@ -10,6 +10,7 @@ export * from './guilds.ts';
 export * from './trackers.ts';
 export * from './permissions.ts';
 export * from './audit.ts';
+export * from './mmr-calculation.ts';
 
 // Re-export types
 export * from '../../types/index.ts';

@@ -87,7 +87,7 @@ export const mmrCalculationApi = {
   },
 
   /**
-   * Calculate MMR using guild configuration and tracker data
+   * Calculate MMR using guild configuration and tracker data (admin endpoint)
    */
   async calculateMmr(
     guildId: string,
@@ -95,6 +95,23 @@ export const mmrCalculationApi = {
   ): Promise<CalculateMmrResult> {
     const response = await api.post<CalculateMmrResult>(
       '/api/mmr-calculation/calculate-mmr',
+      {
+        guildId,
+        trackerData,
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * Calculate MMR using guild configuration and tracker data (public calculator demo)
+   */
+  async calculateMmrDemo(
+    guildId: string,
+    trackerData: TrackerData,
+  ): Promise<CalculateMmrResult> {
+    const response = await api.post<CalculateMmrResult>(
+      '/api/calculator',
       {
         guildId,
         trackerData,

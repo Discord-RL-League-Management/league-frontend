@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAuthStore } from '../stores/index.ts';
 import { useTrackersStore } from '../stores/trackersStore.ts';
 
@@ -7,7 +7,7 @@ import { useTrackersStore } from '../stores/trackersStore.ts';
  * 
  * Best Practice: Components consume data, hook handles fetching automatically
  * - Automatically fetches when user is authenticated and data is stale/missing
- * - Deduplicates requests (store handles this)
+ * - Deduplicates requests via store's myTrackersRequestInFlight flag
  * - Returns cached data immediately (stale-while-revalidate pattern)
  * 
  * Usage:
@@ -21,14 +21,16 @@ export function useMyTrackers() {
   const error = useTrackersStore((state) => state.error);
   const getMyTrackers = useTrackersStore((state) => state.getMyTrackers);
   const myTrackersLastFetched = useTrackersStore((state) => state.myTrackersLastFetched);
-  
-  // Track if we've initiated a fetch to prevent duplicate calls
-  const hasInitiatedFetch = useRef(false);
+  const myTrackersRequestInFlight = useTrackersStore((state) => state.myTrackersRequestInFlight);
 
   useEffect(() => {
     // Only fetch if user is authenticated
     if (!user?.id) {
-      hasInitiatedFetch.current = false;
+      return;
+    }
+
+    // Don't fetch if there's already a request in flight (store handles deduplication)
+    if (myTrackersRequestInFlight) {
       return;
     }
 
@@ -38,16 +40,12 @@ export function useMyTrackers() {
                    Date.now() - myTrackersLastFetched > CACHE_TTL;
     const isEmpty = myTrackers.length === 0;
 
-    // Fetch if stale or empty, but only once per mount/user change
-    if ((isStale || isEmpty) && !hasInitiatedFetch.current) {
-      hasInitiatedFetch.current = true;
-      getMyTrackers().finally(() => {
-        // Reset flag after fetch completes (success or error)
-        // This allows refetch if user changes or component remounts
-        hasInitiatedFetch.current = false;
-      });
+    // Fetch if stale or empty
+    // Store's getMyTrackers will handle deduplication if multiple components call simultaneously
+    if (isStale || isEmpty) {
+      getMyTrackers();
     }
-  }, [user?.id, myTrackersLastFetched, myTrackers.length, getMyTrackers]);
+  }, [user?.id, myTrackersLastFetched, myTrackers.length, myTrackersRequestInFlight, getMyTrackers]);
 
   return {
     myTrackers,

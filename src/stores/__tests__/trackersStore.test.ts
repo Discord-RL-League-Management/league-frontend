@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { useTrackersStore } from '../trackersStore';
 import * as trackerApiModule from '../../lib/api/trackers';
+import type { Tracker } from '../../types/trackers';
 
 // Mock the tracker API
 jest.mock('../../lib/api/trackers', () => ({
@@ -10,6 +11,26 @@ jest.mock('../../lib/api/trackers', () => ({
 }));
 
 const mockTrackerApi = trackerApiModule.trackerApi as jest.Mocked<typeof trackerApiModule.trackerApi>;
+
+// Helper to create mock tracker
+const createMockTracker = (overrides?: Partial<Tracker>): Tracker => ({
+  id: '1',
+  url: 'https://rocketleague.tracker.network/rocket-league/profile/steam/test',
+  game: 'ROCKET_LEAGUE',
+  platform: 'STEAM',
+  username: 'test',
+  userId: '123',
+  displayName: 'test',
+  isActive: true,
+  isDeleted: false,
+  lastScrapedAt: null,
+  scrapingStatus: 'COMPLETED',
+  scrapingError: null,
+  scrapingAttempts: 0,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  ...overrides,
+});
 
 describe('trackersStore.getMyTrackers', () => {
   beforeEach(() => {
@@ -25,7 +46,7 @@ describe('trackersStore.getMyTrackers', () => {
 
   it('should only make one API call when multiple getMyTrackers calls happen simultaneously', async () => {
     // Input: Multiple simultaneous calls
-    const mockTrackers = [{ id: '1', username: 'test' }];
+    const mockTrackers = [createMockTracker()];
     
     // Simulate slow API response to allow multiple calls before first completes
     mockTrackerApi.getMyTrackers.mockImplementation(() => 
@@ -50,7 +71,7 @@ describe('trackersStore.getMyTrackers', () => {
 
   it('should not make API call when data is fresh', async () => {
     // Input: Fresh cached data (within 30s TTL)
-    const mockTrackers = [{ id: '1', username: 'test' }];
+    const mockTrackers = [createMockTracker()];
     
     useTrackersStore.setState({
       myTrackers: mockTrackers,
@@ -70,11 +91,11 @@ describe('trackersStore.getMyTrackers', () => {
 
   it('should fetch fresh data when cache is stale', async () => {
     // Input: Stale cached data (older than 30s TTL)
-    const freshTrackers = [{ id: '1', username: 'test' }];
+    const freshTrackers = [createMockTracker()];
     mockTrackerApi.getMyTrackers.mockResolvedValue(freshTrackers);
     
     useTrackersStore.setState({
-      myTrackers: [{ id: 'old', username: 'old' }],
+      myTrackers: [createMockTracker({ id: 'old', username: 'old' })],
       myTrackersLastFetched: Date.now() - 40000, // 40 seconds ago
     });
 
@@ -91,11 +112,11 @@ describe('trackersStore.getMyTrackers', () => {
 
   it('should fetch fresh data when force flag is true, even with fresh cache', async () => {
     // Input: Fresh cached data + force flag
-    const freshTrackers = [{ id: '1', username: 'test' }];
+    const freshTrackers = [createMockTracker()];
     mockTrackerApi.getMyTrackers.mockResolvedValue(freshTrackers);
     
     useTrackersStore.setState({
-      myTrackers: [{ id: 'old', username: 'old' }],
+      myTrackers: [createMockTracker({ id: 'old', username: 'old' })],
       myTrackersLastFetched: Date.now() - 10000, // 10 seconds ago (fresh)
     });
 
@@ -133,9 +154,9 @@ describe('trackersStore.getMyTrackers', () => {
 
   it('should prevent duplicate requests when second call happens before first completes', async () => {
     // Input: Slow API response
-    const mockTrackers = [{ id: '1', username: 'test' }];
-    let resolveFirstCall: (value: any) => void;
-    const delayedPromise = new Promise(resolve => {
+    const mockTrackers = [createMockTracker()];
+    let resolveFirstCall: (value: Tracker[]) => void;
+    const delayedPromise = new Promise<Tracker[]>((resolve) => {
       resolveFirstCall = resolve;
     });
     mockTrackerApi.getMyTrackers.mockReturnValue(delayedPromise);

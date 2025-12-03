@@ -43,8 +43,11 @@ export function useMyTrackers() {
 
     // Fetch if stale or empty
     // Store's getMyTrackers will handle deduplication if multiple components call simultaneously
+    // Errors are handled in the store, but we catch here to prevent unhandled promise rejections
     if (isStale || isEmpty) {
-      getMyTrackers();
+      getMyTrackers().catch(() => {
+        // Error is already handled in store state, this just prevents unhandled rejection warning
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, myTrackersLastFetched, myTrackers.length]);

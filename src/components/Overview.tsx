@@ -38,6 +38,29 @@ export default function Overview({ guildId }: OverviewProps) {
   const [membershipLoading, setMembershipLoading] = useState(false);
   const { myTrackers, isLoading: trackerLoading } = useMyTrackers();
 
+  // Helper function to check if error is an abort/cancel error
+  const isAbortError = (err: any, signal?: AbortSignal): boolean => {
+    return (
+      err.name === 'AbortError' ||
+      err.message === 'canceled' ||
+      err.code === 'ERR_CANCELED' ||
+      signal?.aborted === true
+    );
+  };
+
+  // Helper function to log errors consistently (only for non-abort errors)
+  const logError = (context: string, err: any) => {
+    console.error(`${context}:`, err);
+    console.error(`${context} - message:`, err.message);
+    console.error(`${context} - status:`, err.status);
+    console.error(`${context} - response:`, err.response?.data);
+    try {
+      console.error(`${context} - full error:`, JSON.stringify(err, Object.getOwnPropertyNames(err)));
+    } catch {
+      console.error(`${context} - full error:`, err);
+    }
+  };
+
   // Fetch current user's membership directly
   useEffect(() => {
     if (!user?.id || !guildId) {
@@ -45,20 +68,38 @@ export default function Overview({ guildId }: OverviewProps) {
       return;
     }
 
+    const abortController = new AbortController();
+    let cancelled = false;
+
     const fetchUserMembership = async () => {
       setMembershipLoading(true);
       try {
-        const membership = await guildApi.getGuildMember(guildId, user.id);
-        setUserMembership(membership);
-      } catch (err) {
-        console.error('Error fetching user membership:', err);
+        const membership = await guildApi.getGuildMember(guildId, user.id, {
+          signal: abortController.signal,
+        });
+        if (!cancelled && !abortController.signal.aborted) {
+          setUserMembership(membership);
+        }
+      } catch (err: any) {
+        // Ignore abort errors - don't log or set state
+        if (isAbortError(err, abortController.signal) || cancelled) {
+          return;
+        }
+        logError('Error fetching user membership', err);
         setUserMembership(null);
       } finally {
-        setMembershipLoading(false);
+        if (!cancelled && !abortController.signal.aborted) {
+          setMembershipLoading(false);
+        }
       }
     };
 
     fetchUserMembership();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
   }, [guildId, user?.id]);
 
   // Ensure roles is always an array (handle null/undefined)
@@ -75,51 +116,84 @@ export default function Overview({ guildId }: OverviewProps) {
 
   // Fetch guild roles (try for all users, handle 403 gracefully for non-admins)
   useEffect(() => {
+    if (permissionsLoading) return;
+
+    const abortController = new AbortController();
+    let cancelled = false;
+
     const fetchRoles = async () => {
-      if (permissionsLoading) return;
-      
       try {
-        const roles = await guildApi.getGuildRoles(guildId);
-        setGuildRoles(roles);
+        const roles = await guildApi.getGuildRoles(guildId, {
+          signal: abortController.signal,
+        });
+        if (!cancelled && !abortController.signal.aborted) {
+          setGuildRoles(roles);
+        }
       } catch (err: any) {
+        // Ignore abort errors - don't log or set state
+        if (isAbortError(err, abortController.signal) || cancelled) {
+          return;
+        }
         // Handle 403 (non-admins can't fetch roles) gracefully
         if (err.response?.status === 403 || err.status === 403) {
           // Non-admins can't fetch roles - this is expected, don't show error
           setGuildRoles([]);
         } else {
           // Other errors - log but don't block UI
-          console.warn('Failed to fetch guild roles:', err);
+          logError('Failed to fetch guild roles', err);
         }
       }
     };
 
     fetchRoles();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
   }, [guildId, permissionsLoading]);
 
   // Fetch user profile and stats
   useEffect(() => {
-    const loadData = async () => {
-      if (!user) return;
+    if (!user) return;
 
+    const abortController = new AbortController();
+    let cancelled = false;
+
+    const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const [profileData, statsData] = await Promise.all([
-          profileApi.getProfile(),
-          profileApi.getStats(),
+          profileApi.getProfile({ signal: abortController.signal }),
+          profileApi.getStats({ signal: abortController.signal }),
         ]);
 
-        setProfile(profileData);
-        setStats(statsData);
-      } catch (err) {
+        if (!cancelled && !abortController.signal.aborted) {
+          setProfile(profileData);
+          setStats(statsData);
+        }
+      } catch (err: any) {
+        // Ignore abort errors - don't log or set state
+        if (isAbortError(err, abortController.signal) || cancelled) {
+          return;
+        }
+        logError('Error loading profile data', err);
         setError(err instanceof Error ? err.message : 'Failed to load profile data');
       } finally {
-        setLoading(false);
+        if (!cancelled && !abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
   }, [user]);
 
   // Metric Card Component

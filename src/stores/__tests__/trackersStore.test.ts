@@ -45,28 +45,42 @@ describe('trackersStore.getMyTrackers', () => {
   });
 
   it('should only make one API call when multiple getMyTrackers calls happen simultaneously', async () => {
-    // Input: Multiple simultaneous calls
+    // Input: Multiple simultaneous calls (simulating race condition)
     const mockTrackers = [createMockTracker()];
     
     // Simulate slow API response to allow multiple calls before first completes
-    mockTrackerApi.getMyTrackers.mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve(mockTrackers), 100))
-    );
+    // This creates a window where race conditions can occur
+    let resolveApiCall: (value: Tracker[]) => void;
+    const delayedApiCall = new Promise<Tracker[]>((resolve) => {
+      resolveApiCall = resolve;
+    });
+    mockTrackerApi.getMyTrackers.mockReturnValue(delayedApiCall);
 
-    // Act: Call getMyTrackers multiple times simultaneously
+    // Act: Call getMyTrackers multiple times in rapid succession (simulating race condition)
+    // These calls happen before the first API call completes
     const promise1 = useTrackersStore.getState().getMyTrackers();
     const promise2 = useTrackersStore.getState().getMyTrackers();
     const promise3 = useTrackersStore.getState().getMyTrackers();
+    const promise4 = useTrackersStore.getState().getMyTrackers();
+    const promise5 = useTrackersStore.getState().getMyTrackers();
 
+    // Verify flag was set synchronously (before API call completes)
+    const stateDuringCall = useTrackersStore.getState();
+    expect(stateDuringCall.myTrackersRequestInFlight).not.toBeNull();
+
+    // Resolve the API call
+    resolveApiCall!(mockTrackers);
+    
     // Wait for all promises to resolve
-    await Promise.all([promise1, promise2, promise3]);
+    await Promise.all([promise1, promise2, promise3, promise4, promise5]);
 
-    // Output: Only one API call should be made
+    // Output: Only one API call should be made, despite 5 simultaneous calls
     expect(mockTrackerApi.getMyTrackers).toHaveBeenCalledTimes(1);
     
-    // Output: All calls should resolve with the same data
-    const state = useTrackersStore.getState();
-    expect(state.myTrackers).toEqual(mockTrackers);
+    // Output: All calls should resolve successfully with the same data
+    const finalState = useTrackersStore.getState();
+    expect(finalState.myTrackers).toEqual(mockTrackers);
+    expect(finalState.myTrackersRequestInFlight).toBeNull();
   });
 
   it('should not make API call when data is fresh', async () => {
@@ -152,31 +166,88 @@ describe('trackersStore.getMyTrackers', () => {
     // This is verified by the promise rejecting, allowing new calls
   });
 
-  it('should prevent duplicate requests when second call happens before first completes', async () => {
-    // Input: Slow API response
+  it('should prevent duplicate requests when calls happen in rapid succession', async () => {
+    // Input: Simulating the actual bug - multiple rapid calls before any completes
     const mockTrackers = [createMockTracker()];
-    let resolveFirstCall: (value: Tracker[]) => void;
+    let resolveApiCall: (value: Tracker[]) => void;
     const delayedPromise = new Promise<Tracker[]>((resolve) => {
-      resolveFirstCall = resolve;
+      resolveApiCall = resolve;
     });
     mockTrackerApi.getMyTrackers.mockReturnValue(delayedPromise);
 
     // Act: Start first request
     const firstPromise = useTrackersStore.getState().getMyTrackers();
     
-    // Act: Start second request before first completes
+    // Verify flag is set immediately (synchronously) - this prevents race conditions
+    const stateAfterFirst = useTrackersStore.getState();
+    expect(stateAfterFirst.myTrackersRequestInFlight).not.toBeNull();
+    
+    // Act: Start second request immediately after (simulating race condition)
     const secondPromise = useTrackersStore.getState().getMyTrackers();
+    
+    // Act: Start third request (simulating multiple components mounting)
+    const thirdPromise = useTrackersStore.getState().getMyTrackers();
 
-    // Resolve the first call
-    resolveFirstCall!(mockTrackers);
-    await Promise.all([firstPromise, secondPromise]);
+    // Verify flag is still set (all calls should see the same in-flight request)
+    const stateAfterMultiple = useTrackersStore.getState();
+    expect(stateAfterMultiple.myTrackersRequestInFlight).not.toBeNull();
 
-    // Output: Only one API call should be made
+    // Resolve the API call
+    resolveApiCall!(mockTrackers);
+    await Promise.all([firstPromise, secondPromise, thirdPromise]);
+
+    // Output: Only one API call should be made (the bug fix)
     expect(mockTrackerApi.getMyTrackers).toHaveBeenCalledTimes(1);
     
-    // Output: Both promises should resolve with same data
-    const state = useTrackersStore.getState();
-    expect(state.myTrackers).toEqual(mockTrackers);
+    // Output: All promises should resolve successfully with same data
+    const finalState = useTrackersStore.getState();
+    expect(finalState.myTrackers).toEqual(mockTrackers);
+    expect(finalState.myTrackersRequestInFlight).toBeNull();
+  });
+
+  it('should handle race condition where multiple calls happen simultaneously', async () => {
+    // Input: This test simulates the exact race condition bug
+    // Multiple components mount simultaneously and all call getMyTrackers()
+    const mockTrackers = [createMockTracker()];
+    
+    // Track API calls to verify deduplication works
+    let apiCallCount = 0;
+    let resolveApiCall: (value: Tracker[]) => void;
+    const delayedPromise = new Promise<Tracker[]>((resolve) => {
+      resolveApiCall = resolve;
+    });
+    
+    mockTrackerApi.getMyTrackers.mockImplementation(() => {
+      apiCallCount++;
+      return delayedPromise;
+    });
+
+    // Act: Make multiple calls in rapid succession (simulating race condition)
+    // This simulates multiple components mounting at the same time
+    const promise1 = useTrackersStore.getState().getMyTrackers();
+    const promise2 = useTrackersStore.getState().getMyTrackers();
+    const promise3 = useTrackersStore.getState().getMyTrackers();
+    const promise4 = useTrackersStore.getState().getMyTrackers();
+    const promise5 = useTrackersStore.getState().getMyTrackers();
+
+    // Verify flag was set synchronously (before any async work)
+    // This is the key fix - flag must be set before async operations
+    const stateAfterCalls = useTrackersStore.getState();
+    expect(stateAfterCalls.myTrackersRequestInFlight).not.toBeNull();
+
+    // Resolve the API call
+    resolveApiCall!(mockTrackers);
+    await Promise.all([promise1, promise2, promise3, promise4, promise5]);
+
+    // Output: Only one API call should be made (the bug we're fixing)
+    // This is the critical assertion - without the fix, we'd see 5 API calls
+    expect(apiCallCount).toBe(1);
+    expect(mockTrackerApi.getMyTrackers).toHaveBeenCalledTimes(1);
+    
+    // Output: Store should have the data
+    const finalState = useTrackersStore.getState();
+    expect(finalState.myTrackers).toEqual(mockTrackers);
+    expect(finalState.myTrackersRequestInFlight).toBeNull();
   });
 });
 

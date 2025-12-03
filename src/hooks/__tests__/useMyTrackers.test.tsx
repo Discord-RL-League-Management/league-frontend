@@ -183,9 +183,16 @@ describe('useMyTrackers hook', () => {
   });
 
   it('should only trigger one fetch when multiple hook instances mount simultaneously', async () => {
-    // Input: Multiple hook instances mounting at the same time
+    // Input: Multiple hook instances mounting at the same time (simulating the bug)
     const mockTrackers = [createMockTracker()];
-    mockTrackerApi.getMyTrackers.mockResolvedValue(mockTrackers);
+    
+    // Simulate slow API to allow multiple hooks to mount before first completes
+    let resolveApiCall: (value: Tracker[]) => void;
+    const delayedApiCall = new Promise<Tracker[]>((resolve) => {
+      resolveApiCall = resolve;
+    });
+    mockTrackerApi.getMyTrackers.mockReturnValue(delayedApiCall);
+    
     useAuthStore.setState({ user: createMockUser() });
     useTrackersStore.setState({
       myTrackers: [],
@@ -193,14 +200,37 @@ describe('useMyTrackers hook', () => {
       myTrackersRequestInFlight: null,
     });
 
-    // Act: Render multiple hook instances simultaneously
-    renderHook(() => useMyTrackers());
-    renderHook(() => useMyTrackers());
-    renderHook(() => useMyTrackers());
+    // Act: Render multiple hook instances simultaneously (simulating race condition)
+    // This simulates Overview, MyTrackersPage, and TrackerRegistrationForm all mounting
+    const hook1 = renderHook(() => useMyTrackers());
+    const hook2 = renderHook(() => useMyTrackers());
+    const hook3 = renderHook(() => useMyTrackers());
+    const hook4 = renderHook(() => useMyTrackers());
+    const hook5 = renderHook(() => useMyTrackers());
 
-    // Output: Only one API call should be made (store handles deduplication)
+    // Verify only one API call was initiated (the bug fix)
+    expect(mockTrackerApi.getMyTrackers).toHaveBeenCalledTimes(1);
+    
+    // Verify store flag is set (deduplication working)
+    const stateDuringCall = useTrackersStore.getState();
+    expect(stateDuringCall.myTrackersRequestInFlight).not.toBeNull();
+
+    // Resolve the API call
+    resolveApiCall!(mockTrackers);
+    
+    // Wait for all hooks to see the data
     await waitFor(() => {
-      expect(mockTrackerApi.getMyTrackers).toHaveBeenCalledTimes(1);
+      expect(hook1.result.current.myTrackers).toHaveLength(1);
+      expect(hook2.result.current.myTrackers).toHaveLength(1);
+      expect(hook3.result.current.myTrackers).toHaveLength(1);
     });
+
+    // Output: Only one API call should be made (the bug we're fixing)
+    expect(mockTrackerApi.getMyTrackers).toHaveBeenCalledTimes(1);
+    
+    // Output: All hooks should have the same data
+    expect(hook1.result.current.myTrackers).toEqual(mockTrackers);
+    expect(hook2.result.current.myTrackers).toEqual(mockTrackers);
+    expect(hook3.result.current.myTrackers).toEqual(mockTrackers);
   });
 });

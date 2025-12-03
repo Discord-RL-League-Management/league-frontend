@@ -21,7 +21,6 @@ export function useMyTrackers() {
   const error = useTrackersStore((state) => state.error);
   const getMyTrackers = useTrackersStore((state) => state.getMyTrackers);
   const myTrackersLastFetched = useTrackersStore((state) => state.myTrackersLastFetched);
-  const myTrackersRequestInFlight = useTrackersStore((state) => state.myTrackersRequestInFlight);
 
   useEffect(() => {
     // Only fetch if user is authenticated
@@ -30,7 +29,9 @@ export function useMyTrackers() {
     }
 
     // Don't fetch if there's already a request in flight (store handles deduplication)
-    if (myTrackersRequestInFlight) {
+    // Check this synchronously to prevent race conditions
+    const currentState = useTrackersStore.getState();
+    if (currentState.myTrackersRequestInFlight) {
       return;
     }
 
@@ -45,7 +46,10 @@ export function useMyTrackers() {
     if (isStale || isEmpty) {
       getMyTrackers();
     }
-  }, [user?.id, myTrackersLastFetched, myTrackers.length, myTrackersRequestInFlight, getMyTrackers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, myTrackersLastFetched, myTrackers.length]);
+  // Note: getMyTrackers is stable from Zustand, but we check myTrackersRequestInFlight
+  // synchronously inside the effect to avoid dependency on it (which would cause re-runs)
 
   return {
     myTrackers,

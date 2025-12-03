@@ -24,7 +24,8 @@ export default function MyTrackersPage() {
     };
 
     initialize();
-  }, [getMyTrackers, fetchTrackers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   if (isInitializing) {
     return (

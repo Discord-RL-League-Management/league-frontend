@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore.js';
 import { useGuildPermissions } from '@/hooks/useGuildPermissions.js';
 import { useTrackersStore } from '@/stores/trackersStore.js';
 import { TrackerRegistrationForm } from '@/components/tracker-registration/TrackerRegistrationForm.js';
+import { MmrCalculator } from '@/components/mmr-calculator/MmrCalculator.js';
 import { Gamepad2, Trophy, Users, TrendingUp, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { UserProfile, UserStats } from '@/types/index.js';
@@ -42,7 +43,8 @@ export default function Overview({ guildId }: OverviewProps) {
     if (user?.id) {
       getMyTrackers();
     }
-  }, [user?.id, getMyTrackers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id, not the function
 
   // Fetch current user's membership directly
   useEffect(() => {
@@ -395,6 +397,9 @@ export default function Overview({ guildId }: OverviewProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* MMR Calculator - Available to everyone */}
+      <MmrCalculator guildId={guildId} />
 
       {/* Future Sections */}
       <Card>

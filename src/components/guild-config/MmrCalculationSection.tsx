@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select.js';
 import { useSettingsStore } from '@/stores/index.js';
 import { useMmrFormula } from '@/hooks/useMmrFormula.js';
-import type { MmrCalculationConfig } from '@/types/index.js';
 
 interface MmrCalculationSectionProps {
   guildId: string;
@@ -36,13 +35,12 @@ const MmrCalculationSectionComponent = ({
   const {
     testResult,
     validationResult,
-    testData,
     testing,
     validating,
     validateFormula,
     testFormula,
-    updateTestData,
   } = useMmrFormula();
+
 
   // Update draft settings when config changes
   const handleAlgorithmChange = (algorithm: 'WEIGHTED_AVERAGE' | 'PEAK_MMR' | 'CUSTOM') => {
@@ -51,7 +49,7 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
-        algorithm,
+        algorithm: algorithm || 'WEIGHTED_AVERAGE',
       },
     });
   };
@@ -63,6 +61,7 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'WEIGHTED_AVERAGE',
         weights: {
           ...mmrConfig?.weights,
           [playlist]: numValue,
@@ -81,6 +80,7 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'WEIGHTED_AVERAGE',
         minGamesPlayed: {
           ...mmrConfig?.minGamesPlayed,
           [playlist]: numValue,
@@ -95,6 +95,7 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'CUSTOM',
         customFormula: formula,
         formulaValidated: false,
         formulaValidationError: undefined,
@@ -125,6 +126,7 @@ const MmrCalculationSectionComponent = ({
       });
     }
   }, [validationResult, mmrConfig?.customFormula, isEditMode]);
+
 
   return (
     <Card>
@@ -310,7 +312,9 @@ const MmrCalculationSectionComponent = ({
                       </span>
                     </>
                   ) : (
-                    <strong>Test Failed:</strong> {testResult.error}
+                    <>
+                      <strong>Test Failed:</strong> {testResult.error}
+                    </>
                   )}
                 </AlertDescription>
               </Alert>

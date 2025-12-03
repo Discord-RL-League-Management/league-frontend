@@ -163,6 +163,13 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       const trackers = await trackerApi.getMyTrackers();
       set({ myTrackers: trackers, loading: false });
     } catch (err: any) {
+      // Don't retry on rate limit (429) errors - prevent infinite loops
+      if (err.status === 429 || err.response?.status === 429) {
+        const errorMessage = 'Too many requests. Please wait a moment before trying again.';
+        set({ error: errorMessage, loading: false });
+        console.error('Rate limited - stopping retries:', err);
+        return; // Early return to prevent further retries
+      }
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch trackers';
       set({ error: errorMessage, loading: false });
       console.error('Error fetching my trackers:', err);

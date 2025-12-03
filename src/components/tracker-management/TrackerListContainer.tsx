@@ -40,7 +40,8 @@ export function TrackerListContainer({ guildId }: TrackerListContainerProps) {
 
   useEffect(() => {
     fetchTrackers(guildId);
-  }, [guildId, fetchTrackers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]); // Only depend on guildId, not the function
 
   const handleEdit = (tracker: Tracker) => {
     setEditingTracker(tracker);

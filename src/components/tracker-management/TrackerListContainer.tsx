@@ -30,7 +30,6 @@ export function TrackerListContainer({ guildId }: TrackerListContainerProps) {
     fetchTrackers,
     updateTracker,
     deleteTracker,
-    getMyTrackers,
   } = useTrackersStore();
 
   const [editingTracker, setEditingTracker] = useState<Tracker | null>(null);
@@ -58,10 +57,8 @@ export function TrackerListContainer({ guildId }: TrackerListContainerProps) {
 
     try {
       await deleteTracker(deletingTracker.id);
-      // Refresh myTrackers if no guildId (showing user's own trackers)
-      if (!guildId) {
-        await getMyTrackers();
-      }
+      // Store's deleteTracker already updates myTrackers optimistically
+      // Hook will handle any needed refresh automatically
       setIsDeleteDialogOpen(false);
       setDeletingTracker(null);
     } catch (err) {

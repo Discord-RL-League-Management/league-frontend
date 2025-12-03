@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTrackersStore } from '../../stores/trackersStore.js';
+import { useMyTrackers } from '../../hooks/useMyTrackers.js';
 import { useNavigate, Link } from 'react-router-dom';
 import { validateTrackerUrl, type ValidationResult } from '../../utils/trackerValidation.js';
 import { CheckCircle2, XCircle } from 'lucide-react';
@@ -7,26 +8,10 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 export function TrackerRegistrationForm() {
   const [urls, setUrls] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCheckingTrackers, setIsCheckingTrackers] = useState(true);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
-  const { registerTrackers, error, clearError, getMyTrackers, myTrackers } = useTrackersStore();
+  const { registerTrackers, error, clearError } = useTrackersStore();
+  const { myTrackers, isLoading: isCheckingTrackers } = useMyTrackers();
   const navigate = useNavigate();
-
-  // Pre-check for existing trackers
-  useEffect(() => {
-    const checkExistingTrackers = async () => {
-      setIsCheckingTrackers(true);
-      try {
-        await getMyTrackers();
-      } catch (err) {
-        console.error('Failed to check existing trackers:', err);
-      } finally {
-        setIsCheckingTrackers(false);
-      }
-    };
-
-    checkExistingTrackers();
-  }, [getMyTrackers]);
 
   // Add URL field
   const addUrlField = () => {

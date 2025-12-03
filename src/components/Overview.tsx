@@ -8,11 +8,11 @@ import { profileApi } from '@/lib/api/profile.js';
 import { guildApi } from '@/lib/api/guilds.js';
 import { useAuthStore } from '@/stores/authStore.js';
 import { useGuildPermissions } from '@/hooks/useGuildPermissions.js';
-import { useTrackersStore } from '@/stores/trackersStore.js';
+import { useMyTrackers } from '@/hooks/useMyTrackers.js';
 import { TrackerRegistrationForm } from '@/components/tracker-registration/TrackerRegistrationForm.js';
-import { MmrCalculator } from '@/components/mmr-calculator/MmrCalculator.js';
-import { Gamepad2, Trophy, Users, TrendingUp, ExternalLink } from 'lucide-react';
+import { Gamepad2, Trophy, Users, TrendingUp, ExternalLink, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button.js';
 import type { UserProfile, UserStats } from '@/types/index.js';
 import type { DiscordRole } from '@/types/discord.js';
 import type { Member } from '@/stores/membersStore.js';
@@ -36,15 +36,7 @@ export default function Overview({ guildId }: OverviewProps) {
   const [guildRoles, setGuildRoles] = useState<DiscordRole[]>([]);
   const [userMembership, setUserMembership] = useState<Member | null>(null);
   const [membershipLoading, setMembershipLoading] = useState(false);
-  const { myTrackers, getMyTrackers, loading: trackerLoading } = useTrackersStore();
-
-  // Fetch current user's trackers
-  useEffect(() => {
-    if (user?.id) {
-      getMyTrackers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only depend on user.id, not the function
+  const { myTrackers, isLoading: trackerLoading } = useMyTrackers();
 
   // Fetch current user's membership directly
   useEffect(() => {
@@ -398,8 +390,23 @@ export default function Overview({ guildId }: OverviewProps) {
         </CardContent>
       </Card>
 
-      {/* MMR Calculator - Available to everyone */}
-      <MmrCalculator guildId={guildId} />
+      {/* MMR Calculator Link */}
+      <Card>
+        <CardHeader>
+          <CardTitle>MMR Calculator</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4">
+            Calculate your internal MMR using this guild's configured algorithm
+          </p>
+          <Link to={`/dashboard/guild/${guildId}/DemoCalculator`}>
+            <Button className="w-full sm:w-auto">
+              <Calculator className="mr-2 h-4 w-4" />
+              Open Calculator
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
 
       {/* Future Sections */}
       <Card>

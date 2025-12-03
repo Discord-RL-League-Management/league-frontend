@@ -13,13 +13,15 @@ interface TrackersState {
   scrapingStatus: ScrapingStatus | null;
   loading: boolean;
   error: string | null;
+  myTrackersLastFetched: number | null; // Timestamp of last successful fetch
+  myTrackersRequestInFlight: Promise<void> | null; // Track in-flight request
 
   // Methods
   fetchTrackers: (guildId?: string) => Promise<void>;
   getTracker: (id: string) => Promise<void>;
   registerTrackers: (urls: string[]) => Promise<void>;
   addTracker: (url: string) => Promise<void>;
-  getMyTrackers: () => Promise<void>;
+  getMyTrackers: (force?: boolean) => Promise<void>;
   getTrackerDetail: (trackerId: string) => Promise<void>;
   refreshTracker: (trackerId: string) => Promise<void>;
   getScrapingStatus: (trackerId: string) => Promise<void>;
@@ -40,6 +42,8 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
   scrapingStatus: null,
   loading: false,
   error: null,
+  myTrackersLastFetched: null,
+  myTrackersRequestInFlight: null,
 
   /**
    * Fetch trackers for a guild or all user trackers
@@ -156,24 +160,77 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
 
   /**
    * Get current user's trackers
+   * @param force - If true, bypasses cache and makes a fresh request
    */
-  getMyTrackers: async () => {
-    try {
-      set({ error: null, loading: true });
-      const trackers = await trackerApi.getMyTrackers();
-      set({ myTrackers: trackers, loading: false });
-    } catch (err: any) {
-      // Don't retry on rate limit (429) errors - prevent infinite loops
-      if (err.status === 429 || err.response?.status === 429) {
-        const errorMessage = 'Too many requests. Please wait a moment before trying again.';
-        set({ error: errorMessage, loading: false });
-        console.error('Rate limited - stopping retries:', err);
-        return; // Early return to prevent further retries
-      }
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch trackers';
-      set({ error: errorMessage, loading: false });
-      console.error('Error fetching my trackers:', err);
+  getMyTrackers: async (force = false) => {
+    const state = get();
+    
+    // If there's already a request in flight, wait for it instead of making a new one
+    if (state.myTrackersRequestInFlight && !force) {
+      return state.myTrackersRequestInFlight;
     }
+
+    // If we have recent data (within last 30 seconds) and not forcing, use cache
+    const CACHE_TTL = 30000; // 30 seconds
+    if (
+      !force &&
+      state.myTrackersLastFetched &&
+      Date.now() - state.myTrackersLastFetched < CACHE_TTL &&
+      state.myTrackers.length > 0
+    ) {
+      return Promise.resolve();
+    }
+
+    // Create promise with resolve/reject handlers
+    // This MUST be set synchronously to prevent race conditions
+    let resolveFn: (() => void) | undefined;
+    let rejectFn: ((err: any) => void) | undefined;
+    const requestPromise = new Promise<void>((resolve, reject) => {
+      resolveFn = resolve;
+      rejectFn = reject;
+    });
+
+    // CRITICAL: Set in-flight flag SYNCHRONOUSLY before any async work
+    // This prevents race conditions when multiple components call this simultaneously
+    set({ myTrackersRequestInFlight: requestPromise });
+
+    // Now execute the actual async fetch
+    (async () => {
+      try {
+        set({ error: null, loading: true });
+        const trackers = await trackerApi.getMyTrackers();
+        set({
+          myTrackers: trackers,
+          loading: false,
+          myTrackersLastFetched: Date.now(),
+          myTrackersRequestInFlight: null,
+        });
+        resolveFn?.();
+      } catch (err: any) {
+        // Don't retry on rate limit (429) errors - prevent infinite loops
+        if (err.status === 429 || err.response?.status === 429) {
+          const errorMessage = 'Too many requests. Please wait a moment before trying again.';
+          set({
+            error: errorMessage,
+            loading: false,
+            myTrackersRequestInFlight: null,
+          });
+          console.error('Rate limited - stopping retries:', err);
+          rejectFn?.(err);
+          return;
+        }
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch trackers';
+        set({
+          error: errorMessage,
+          loading: false,
+          myTrackersRequestInFlight: null,
+        });
+        console.error('Error fetching my trackers:', err);
+        rejectFn?.(err);
+      }
+    })();
+
+    return requestPromise;
   },
 
   /**

@@ -28,31 +28,31 @@ export function useMyTrackers() {
       return;
     }
 
-    // Don't fetch if there's already a request in flight (store handles deduplication)
-    // Check this synchronously to prevent race conditions
+    // Get current state synchronously to check if data is missing
+    // Don't depend on myTrackers.length in dependency array - that causes effect re-runs
+    // when data loads, potentially triggering duplicate fetches
     const currentState = useTrackersStore.getState();
-    if (currentState.myTrackersRequestInFlight) {
-      return;
-    }
+    const isEmpty = currentState.myTrackers.length === 0;
 
     // Check if data is stale or missing
     const CACHE_TTL = 30000; // 30 seconds
     const isStale = !myTrackersLastFetched || 
                    Date.now() - myTrackersLastFetched > CACHE_TTL;
-    const isEmpty = myTrackers.length === 0;
 
     // Fetch if stale or empty
-    // Store's getMyTrackers will handle deduplication if multiple components call simultaneously
-    // Errors are handled in the store, but we catch here to prevent unhandled promise rejections
+    // Store's getMyTrackers handles ALL deduplication - no need to check flags here
+    // The store sets myTrackersRequestInFlight synchronously before any async work,
+    // so multiple simultaneous calls will be deduplicated automatically
     if (isStale || isEmpty) {
       getMyTrackers().catch(() => {
         // Error is already handled in store state, this just prevents unhandled rejection warning
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, myTrackersLastFetched, myTrackers.length]);
-  // Note: getMyTrackers is stable from Zustand, but we check myTrackersRequestInFlight
-  // synchronously inside the effect to avoid dependency on it (which would cause re-runs)
+  }, [user?.id, myTrackersLastFetched]);
+  // Note: getMyTrackers is stable from Zustand store
+  // Note: We check myTrackers.length synchronously inside effect, not in dependencies
+  // This prevents effect re-runs when data loads, which could trigger duplicate fetches
 
   return {
     myTrackers,

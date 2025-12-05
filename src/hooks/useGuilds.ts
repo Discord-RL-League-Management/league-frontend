@@ -20,7 +20,6 @@ export function useGuilds() {
   const loading = useGuildStore((state) => state.loading);
   const error = useGuildStore((state) => state.error);
   const fetchGuilds = useGuildStore((state) => state.fetchGuilds);
-  const lastFetched = useGuildStore((state) => state.lastFetched);
 
   useEffect(() => {
     // Only fetch if user is authenticated
@@ -35,7 +34,10 @@ export function useGuilds() {
     const isEmpty = currentState.guilds.length === 0;
 
     // Check if data is stale or missing
-    const CACHE_TTL = 30000; // 30 seconds
+    // Read lastFetched synchronously inside effect, not from dependency array
+    // This prevents effect re-runs when lastFetched updates after a successful fetch
+    const CACHE_TTL = 300000; // 5 minutes
+    const lastFetched = currentState.lastFetched;
     const isStale = !lastFetched || Date.now() - lastFetched > CACHE_TTL;
 
     // Fetch if stale or empty
@@ -59,10 +61,10 @@ export function useGuilds() {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, lastFetched]);
+  }, [user?.id]);
   // Note: fetchGuilds is stable from Zustand store
-  // Note: We check guilds.length synchronously inside effect, not in dependencies
-  // This prevents effect re-runs when data loads, which could trigger duplicate fetches
+  // Note: We check guilds.length and lastFetched synchronously inside effect, not in dependencies
+  // This prevents effect re-runs when data loads or lastFetched updates, which could trigger duplicate fetches
 
   return {
     guilds,
@@ -70,4 +72,7 @@ export function useGuilds() {
     error,
   };
 }
+
+
+
 

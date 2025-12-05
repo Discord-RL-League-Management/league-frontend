@@ -30,8 +30,8 @@ export const useGuildStore = create<GuildState>()(
           return state.pendingRequest;
         }
 
-        // If we have recent data (within last 30 seconds) and not forcing, use cache
-        const CACHE_TTL = 30000; // 30 seconds
+        // If we have recent data (within last 5 minutes) and not forcing, use cache
+        const CACHE_TTL = 300000; // 5 minutes
         if (
           !force &&
           state.lastFetched &&
@@ -67,6 +67,19 @@ export const useGuildStore = create<GuildState>()(
             });
             resolveFn!();
           } catch (err: any) {
+            // Don't retry on rate limit (429) errors - prevent infinite loops
+            if (err.status === 429 || err.response?.status === 429) {
+              const errorMessage = 'Too many requests. Please wait a moment before trying again.';
+              set({
+                error: errorMessage,
+                loading: false,
+                pendingRequest: null,
+              });
+              console.error('Rate limited - stopping retries:', err);
+              // rejectFn is guaranteed to be defined (assigned synchronously above)
+              rejectFn!(err);
+              return;
+            }
             const errorMessage = err.response?.data?.message || 'Failed to load guilds';
             set({
               error: errorMessage,

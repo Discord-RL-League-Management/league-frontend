@@ -16,7 +16,6 @@ interface TrackersState {
   myTrackersLastFetched: number | null; // Timestamp of last successful fetch
   myTrackersRequestInFlight: Promise<void> | null; // Track in-flight request
 
-  // Methods
   fetchTrackers: (guildId?: string) => Promise<void>;
   getTracker: (id: string) => Promise<void>;
   registerTrackers: (urls: string[]) => Promise<void>;
@@ -85,7 +84,6 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       const updated = await trackerApi.updateTracker(id, data);
       
-      // Update in all relevant state slices for consistency
       set((state) => ({
         trackers: state.trackers.map((t) => (t.id === id ? updated : t)),
         myTrackers: state.myTrackers.map((t) => (t.id === id ? updated : t)),
@@ -108,7 +106,6 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       await trackerApi.deleteTracker(id);
       
-      // Remove from trackers list and myTrackers
       set((state) => ({
         trackers: state.trackers.filter((t) => t.id !== id),
         myTrackers: state.myTrackers.filter((t) => t.id !== id),
@@ -172,12 +169,10 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
   getMyTrackers: async (force = false) => {
     const state = get();
     
-    // If there's already a request in flight, wait for it instead of making a new one
     if (state.myTrackersRequestInFlight && !force) {
       return state.myTrackersRequestInFlight;
     }
 
-    // If we have recent data (within last 30 seconds) and not forcing, use cache
     const CACHE_TTL = 30000; // 30 seconds
     if (
       !force &&
@@ -188,27 +183,18 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       return Promise.resolve();
     }
 
-    // Create promise with resolve/reject handlers
-    // This MUST be set synchronously to prevent race conditions
-    // Use a more robust pattern to ensure handlers are always defined
-    let resolveFn: (() => void) | undefined;
-    let rejectFn: ((err: unknown) => void) | undefined;
+    // Handlers must be set synchronously to prevent race conditions
+    let resolveFn!: (() => void);
+    let rejectFn!: ((err: unknown) => void);
     
     const requestPromise = new Promise<void>((resolve, reject) => {
-      // Assign handlers synchronously before any async work
-      // These are guaranteed to be assigned before the promise is returned
       resolveFn = resolve;
       rejectFn = reject;
     });
 
-    // CRITICAL: Set in-flight flag SYNCHRONOUSLY before any async work
-    // This prevents race conditions when multiple components call this simultaneously
+    // Set in-flight flag synchronously before any async work to prevent race conditions
     set({ myTrackersRequestInFlight: requestPromise });
 
-    // Now execute the actual async fetch
-    // Use a separate async function to ensure proper error handling
-    // Note: resolveFn and rejectFn are guaranteed to be defined here because
-    // they're assigned synchronously in the Promise constructor above
     (async () => {
       try {
         set({ error: null, loading: true });
@@ -219,8 +205,7 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
           myTrackersLastFetched: Date.now(),
           myTrackersRequestInFlight: null,
         });
-        // resolveFn is guaranteed to be defined (assigned synchronously above)
-        resolveFn!();
+        resolveFn();
       } catch (err: unknown) {
         // Don't retry on rate limit (429) errors - prevent infinite loops
         const errorObj = err as { status?: number; response?: { status?: number; data?: { message?: string } }; message?: string };
@@ -232,8 +217,7 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
             myTrackersRequestInFlight: null,
           });
           console.error('Rate limited - stopping retries:', err);
-          // rejectFn is guaranteed to be defined (assigned synchronously above)
-          rejectFn!(err);
+          rejectFn(err);
           return;
         }
         const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch trackers';
@@ -243,8 +227,7 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
           myTrackersRequestInFlight: null,
         });
         console.error('Error fetching my trackers:', err);
-        // rejectFn is guaranteed to be defined (assigned synchronously above)
-        rejectFn!(err);
+        rejectFn(err);
       }
     })();
 
@@ -274,13 +257,10 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
     try {
       set({ error: null, loading: true });
       await trackerApi.refreshTracker(trackerId);
-      // Refresh the tracker detail after refresh is triggered
       try {
         await get().getTrackerDetail(trackerId);
       } catch (detailErr: unknown) {
-        // Log detail fetch error but don't fail the entire refresh operation
         console.error('Error fetching tracker detail after refresh:', detailErr);
-        // Set a more specific error message
         const detailErrorObj = detailErr as { response?: { data?: { message?: string } }; message?: string };
         const detailErrorMessage = detailErrorObj.response?.data?.message || detailErrorObj.message || 'Failed to fetch updated tracker detail';
         set({ error: `Tracker refresh initiated, but failed to load details: ${detailErrorMessage}` });

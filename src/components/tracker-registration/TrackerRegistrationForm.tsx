@@ -13,7 +13,6 @@ export function TrackerRegistrationForm() {
   const { myTrackers, isLoading: isCheckingTrackers } = useMyTrackers();
   const navigate = useNavigate();
 
-  // Add URL field
   const addUrlField = () => {
     if (urls.length < 4) {
       setUrls([...urls, '']);
@@ -21,13 +20,11 @@ export function TrackerRegistrationForm() {
     }
   };
 
-  // Remove URL field
   const removeUrlField = (index: number) => {
     setUrls(urls.filter((_, i) => i !== index));
     setValidationResults(validationResults.filter((_, i) => i !== index));
   };
 
-  // Update URL at index
   const updateUrl = (index: number, value: string) => {
     const newUrls = [...urls];
     newUrls[index] = value;
@@ -55,14 +52,12 @@ export function TrackerRegistrationForm() {
       return;
     }
 
-    // Validate all URLs
     const allValid = validUrls.every(url => {
       const result = validateTrackerUrl(url.trim());
       return result.isValid;
     });
 
     if (!allValid) {
-      // Re-validate all to show errors
       const newResults = urls.map(url => {
         if (url.trim()) {
           return validateTrackerUrl(url.trim());
@@ -79,7 +74,6 @@ export function TrackerRegistrationForm() {
       navigate('/dashboard/trackers');
     } catch (err) {
       console.error('Failed to register trackers:', err);
-      // Error is already set in the store
     } finally {
       setIsSubmitting(false);
     }

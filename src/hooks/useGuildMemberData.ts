@@ -43,12 +43,10 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
           setMembership(memberData);
         }
       } catch (err: unknown) {
-        // Ignore abort errors - don't log or set state
         if (shouldIgnoreError(err, abortController.signal, membershipCancelledRef.current)) {
           return;
         }
 
-        // Log error but don't block UI
         console.error('Error fetching user membership:', err);
         if (!membershipCancelledRef.current && !abortController.signal.aborted) {
           setMembership(null);
@@ -84,7 +82,6 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
           setRoles(rolesData);
         }
       } catch (err: unknown) {
-        // Ignore abort errors - don't log or set state
         if (shouldIgnoreError(err, abortController.signal, rolesCancelledRef.current)) {
           return;
         }
@@ -92,12 +89,10 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
         const errorObj = err as { response?: { status?: number }; status?: number };
         // Handle 403 (non-admins can't fetch roles) gracefully
         if (errorObj.response?.status === 403 || errorObj.status === 403) {
-          // Non-admins can't fetch roles - this is expected, don't show error
           if (!rolesCancelledRef.current && !abortController.signal.aborted) {
             setRoles([]);
           }
         } else {
-          // Other errors - log but don't block UI
           console.error('Failed to fetch guild roles:', err);
         }
       }
@@ -116,7 +111,6 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
     return map;
   }, [roles]);
 
-  // Defensive: handle cases where membership.roles might be null/undefined
   const userRoles = Array.isArray(membership?.roles) ? membership.roles : [];
 
   const loading = membershipLoading || rolesLoading;

@@ -80,13 +80,11 @@ export function getUserFriendlyErrorMessage(err: unknown, defaultMessage: string
     return defaultMessage;
   }
 
-  // Check for HTTP error response
   const httpError = err as { response?: { data?: { message?: string }; status?: number }; status?: number };
   if (httpError.response?.data?.message) {
     return httpError.response.data.message;
   }
 
-  // Check for HTTP status codes
   const status = httpError.response?.status || httpError.status;
   if (status) {
     switch (status) {
@@ -112,7 +110,6 @@ export function getUserFriendlyErrorMessage(err: unknown, defaultMessage: string
     }
   }
 
-  // Check for Error object with message
   if (err instanceof Error && err.message) {
     // Filter out technical error messages that aren't user-friendly
     const message = err.message.toLowerCase();
@@ -125,7 +122,6 @@ export function getUserFriendlyErrorMessage(err: unknown, defaultMessage: string
     return err.message;
   }
 
-  // Fallback to default message
   return defaultMessage;
 }
 

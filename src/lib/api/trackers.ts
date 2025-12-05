@@ -36,14 +36,13 @@ export const trackerApi = {
       const response = await api.get('/api/trackers/me');
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: unknown) {
-      // Handle 404 gracefully (no trackers)
       const axiosError = error as { response?: { status?: number }; status?: number };
       if (axiosError.response?.status === 404 || axiosError.status === 404) {
         return [];
       }
       // Don't retry on rate limit - let the error propagate so the store can handle it
       if (axiosError.response?.status === 429 || axiosError.status === 429) {
-        throw error; // Re-throw to let store handle it
+        throw error;
       }
       throw error;
     }

@@ -31,7 +31,6 @@ function createRequestKey(config: AxiosRequestConfig): string {
 
 function cleanupStaleRequests() {
   if (pendingRequests.size > MAX_PENDING_REQUESTS) {
-    // If we exceed max, clear all (last resort)
     console.warn(`Clearing ${pendingRequests.size} pending requests (exceeded max ${MAX_PENDING_REQUESTS})`);
     pendingRequests.clear();
   }
@@ -54,7 +53,6 @@ const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' |
       pendingRequests.delete(key);
     });
     
-    // Add timeout to force cleanup if request takes too long
     const timeoutId = setTimeout(() => {
       if (pendingRequests.has(key)) {
         console.warn(`Request timeout for key: ${key}, removing from pending requests`);
@@ -92,11 +90,9 @@ baseApi.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - redirect to login using React Router
       navigate('/login', { replace: true });
     }
     
-    // Transform error for consistent handling
     const errorData = error.response?.data as { message?: string; code?: string; details?: Record<string, unknown> } | undefined;
     const transformedError = {
       message: errorData?.message || error.message || 'Network error',

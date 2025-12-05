@@ -54,7 +54,6 @@ export default function Overview({ guildId }: OverviewProps) {
       <ErrorDisplay 
         error={error} 
         onRetry={() => {
-          // Reload page to trigger hook remount and refetch
           window.location.reload();
         }}
       />

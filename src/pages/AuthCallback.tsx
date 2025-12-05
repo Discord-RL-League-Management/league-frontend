@@ -16,9 +16,13 @@ export default function AuthCallback() {
     
     if (error) {
       // Handle OAuth errors (user denied permission, etc.)
+      // Use state instead of URL params to prevent XSS risks
       const description = searchParams.get('description') || 'Authentication failed';
       console.error('OAuth error:', error, description);
-      navigate('/login?error=' + encodeURIComponent(error), { replace: true });
+      navigate('/login', { 
+        replace: true,
+        state: { error: error, description: description }
+      });
       return;
     }
     

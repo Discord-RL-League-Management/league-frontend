@@ -26,6 +26,12 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
   pendingRequests: {},
 
   fetchPermissions: async (guildId: string) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      console.warn('fetchPermissions called with invalid guildId:', guildId);
+      return;
+    }
+
     // Return cached if exists
     if (get().permissions[guildId]) {
       return;
@@ -38,11 +44,24 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
       return existingRequest;
     }
 
+    // Create abort controller for cleanup
+    let isAborted = false;
+
     // Create new request promise
     const requestPromise = (async () => {
       try {
+        // Check if aborted before starting
+        if (isAborted) {
+          return;
+        }
+
         set({ loading: true, error: null });
         const permissionState = await permissionApi.getMyPermissions(guildId);
+        
+        // Check if aborted after fetch completes
+        if (isAborted) {
+          return;
+        }
         
         set((state) => ({
           permissions: {
@@ -52,6 +71,10 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
           loading: false,
         }));
       } catch (err: any) {
+        // Don't update state if aborted
+        if (isAborted) {
+          return;
+        }
         const errorMessage = err.response?.data?.message || 'Failed to load permissions';
         set({ error: errorMessage, loading: false });
         console.error('Error fetching permissions:', err);
@@ -63,6 +86,11 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         });
       }
     })();
+
+    // Store abort function for cleanup
+    (requestPromise as any).abort = () => {
+      isAborted = true;
+    };
 
     // Track pending request atomically - use updater function to avoid race condition
     set((state) => ({

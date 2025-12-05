@@ -27,6 +27,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   pendingRequests: {},
 
   loadSettings: async (guildId: string) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      console.warn('loadSettings called with invalid guildId:', guildId);
+      return;
+    }
+
     // Return cached if exists (don't call set() to avoid triggering re-renders)
     if (get().settings[guildId]) {
       return;
@@ -38,11 +44,24 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return existingRequest;
     }
 
+    // Create abort controller for cleanup
+    let isAborted = false;
+
     // Create new request promise
     const requestPromise = (async () => {
       try {
+        // Check if aborted before starting
+        if (isAborted) {
+          return;
+        }
+
         set({ error: null, loading: true });
         const data = await guildApi.getGuildSettings(guildId);
+        
+        // Check if aborted after fetch completes
+        if (isAborted) {
+          return;
+        }
         
         set((state) => ({
           settings: {
@@ -53,6 +72,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           loading: false,
         }));
       } catch (err: any) {
+        // Don't update state if aborted
+        if (isAborted) {
+          return;
+        }
         const errorMessage = err.response?.data?.message || 'Failed to load settings';
         set({ error: errorMessage, loading: false });
         console.error('Error loading settings:', err);
@@ -65,6 +88,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       }
     })();
 
+    // Store abort function for cleanup
+    (requestPromise as any).abort = () => {
+      isAborted = true;
+    };
+
     // Track pending request
     set((state) => ({
       pendingRequests: { ...state.pendingRequests, [guildId]: requestPromise },
@@ -74,6 +102,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   updateSettings: async (guildId: string, updates: Partial<GuildSettingsType>) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      throw new Error('Invalid guildId provided');
+    }
+
+    // Prevent concurrent updates to the same guild
+    if (get().pendingUpdates.has(guildId)) {
+      throw new Error('Settings update already in progress for this guild');
+    }
+
     try {
       set({ error: null, loading: true });
       
@@ -98,10 +136,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         },
       }));
       
-      // Track pending update
-      const updateId = Date.now().toString();
+      // Track pending update using guildId as key to prevent concurrent updates
       set((state) => ({
-        pendingUpdates: new Set(state.pendingUpdates).add(updateId),
+        pendingUpdates: new Set(state.pendingUpdates).add(guildId),
       }));
       
       // Make API call
@@ -110,7 +147,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Remove from pending updates
       set((state) => {
         const newSet = new Set(state.pendingUpdates);
-        newSet.delete(updateId);
+        newSet.delete(guildId);
         return { pendingUpdates: newSet };
       });
       
@@ -120,6 +157,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await store.loadSettings(guildId);
       const errorMessage = err.response?.data?.message || 'Failed to update settings';
       set({ error: errorMessage });
+      
+      // Remove from pending updates on error
+      set((state) => {
+        const newSet = new Set(state.pendingUpdates);
+        newSet.delete(guildId);
+        return { pendingUpdates: newSet };
+      });
+      
       throw err;
     } finally {
       set({ loading: false });

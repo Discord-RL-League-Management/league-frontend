@@ -23,6 +23,12 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
   pendingRequests: {},
 
   fetchChannels: async (guildId: string) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      console.warn('fetchChannels called with invalid guildId:', guildId);
+      return;
+    }
+
     // Return cached if exists
     if (get().channels[guildId]) {
       return;
@@ -34,11 +40,25 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
       return existingRequest;
     }
 
+    // Create abort controller for cleanup
+    const abortController = new AbortController();
+    let isAborted = false;
+
     // Create new request promise
     const requestPromise = (async () => {
       try {
+        // Check if aborted before starting
+        if (isAborted) {
+          return;
+        }
+
         set({ error: null, loading: true });
         const data = await guildApi.getGuildChannels(guildId);
+        
+        // Check if aborted after fetch completes
+        if (isAborted) {
+          return;
+        }
         
         set((state) => ({
           channels: {
@@ -48,6 +68,10 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
           loading: false,
         }));
       } catch (err: any) {
+        // Don't update state if aborted
+        if (isAborted) {
+          return;
+        }
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch channels';
         set({ error: errorMessage, loading: false });
         console.error('Error fetching channels:', err);
@@ -59,6 +83,12 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
         });
       }
     })();
+
+    // Store abort function for cleanup
+    (requestPromise as any).abort = () => {
+      isAborted = true;
+      abortController.abort();
+    };
 
     // Track pending request
     set((state) => ({

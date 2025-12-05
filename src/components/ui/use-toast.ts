@@ -3,7 +3,7 @@ import * as React from "react"
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast.js"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -12,12 +12,12 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
+type ActionType = {
+  ADD_TOAST: "ADD_TOAST";
+  UPDATE_TOAST: "UPDATE_TOAST";
+  DISMISS_TOAST: "DISMISS_TOAST";
+  REMOVE_TOAST: "REMOVE_TOAST";
+}
 
 let count = 0
 
@@ -25,8 +25,6 @@ function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
 }
-
-type ActionType = typeof actionTypes
 
 type Action =
   | {
@@ -88,8 +86,17 @@ export const reducer = (state: State, action: Action): State => {
       const { toastId } = action
 
       if (toastId) {
+        // Clear existing timeout before adding to remove queue
+        const existingTimeout = toastTimeouts.get(toastId);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+          toastTimeouts.delete(toastId);
+        }
         addToRemoveQueue(toastId)
       } else {
+        // Clear all timeouts when dismissing all
+        toastTimeouts.forEach(timeout => clearTimeout(timeout));
+        toastTimeouts.clear();
         state.toasts.forEach((toast) => {
           addToRemoveQueue(toast.id)
         })

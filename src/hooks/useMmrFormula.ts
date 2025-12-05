@@ -45,12 +45,13 @@ export function useMmrFormula() {
     try {
       const result = await mmrCalculationApi.validateFormula(formula);
       setValidationResult(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorObj = error as { response?: { data?: { message?: string } }; message?: string };
       setValidationResult({
         valid: false,
         error:
-          error.response?.data?.message ||
-          error.message ||
+          errorObj.response?.data?.message ||
+          errorObj.message ||
           'Failed to validate formula',
       });
     } finally {
@@ -80,14 +81,15 @@ export function useMmrFormula() {
         const dataToUse = customTestData || testData;
         const result = await mmrCalculationApi.testFormula(formula, dataToUse);
         setTestResult(result);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorObj = error as { response?: { data?: { message?: string } }; message?: string };
         setTestResult({
           result: 0,
           testData: customTestData || testData,
           valid: false,
           error:
-            error.response?.data?.message ||
-            error.message ||
+            errorObj.response?.data?.message ||
+            errorObj.message ||
             'Failed to test formula',
         });
       } finally {
@@ -136,4 +138,3 @@ export function useMmrFormula() {
     reset,
   };
 }
-

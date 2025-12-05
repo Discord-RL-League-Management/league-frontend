@@ -105,7 +105,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    * Evict oldest cache entry when limit reached
    * Note: This is now handled inline in fetchMembers for better immutability
    */
-  _evictOldest: (_guildId: string) => {
+  _evictOldest: () => {
     // This method is kept for potential future use, but eviction is now handled inline
     // in fetchMembers to ensure proper immutability
   },
@@ -145,6 +145,20 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    * Returns cached data immediately if available, fetches fresh in background
    */
   fetchMembers: async (guildId: string, page: number, limit: number, searchQuery?: string) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      console.warn('fetchMembers called with invalid guildId:', guildId);
+      return;
+    }
+    if (typeof page !== 'number' || page < 1) {
+      console.warn('fetchMembers called with invalid page:', page);
+      return;
+    }
+    if (typeof limit !== 'number' || limit < 1) {
+      console.warn('fetchMembers called with invalid limit:', limit);
+      return;
+    }
+
     const cacheKey = get()._createCacheKey(page, limit, searchQuery);
     const requestKey = `${guildId}-${cacheKey}`;
     const isSearch = !!searchQuery;
@@ -164,9 +178,17 @@ export const useMembersStore = create<MembersState>((set, get) => ({
       return;
     }
 
+    // Create abort controller for cleanup
+    let isAborted = false;
+
     // Create new request promise
     const requestPromise = (async () => {
       try {
+        // Check if aborted before starting
+        if (isAborted) {
+          return;
+        }
+
         // Only set loading if we don't have cached data (SWR pattern)
         if (!hasCachedData) {
           set({ error: null, loading: true });
@@ -176,6 +198,11 @@ export const useMembersStore = create<MembersState>((set, get) => ({
         const data = isSearch
           ? await guildApi.searchGuildMembers(guildId, searchQuery!, page, limit)
           : await guildApi.getGuildMembers(guildId, page, limit);
+
+        // Check if aborted after fetch completes
+        if (isAborted) {
+          return;
+        }
 
         // Get current cache state
         const currentCache = get().cache;
@@ -218,17 +245,27 @@ export const useMembersStore = create<MembersState>((set, get) => ({
           loading: false,
         }));
       } catch (err: unknown) {
+        // Don't update state if aborted
+        if (isAborted) {
+          return;
+        }
         const errorMessage = err instanceof Error ? err.message : 'Failed to load members';
         set({ error: errorMessage, loading: false });
         console.error('Error fetching members:', err);
       } finally {
         // Clean up pending request
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [requestKey]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
       }
     })();
+
+    // Store abort function for cleanup
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
+      isAborted = true;
+    };
 
     // Track pending request
     set((state) => ({
@@ -243,6 +280,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    */
   invalidateCache: (guildId: string) => {
     set((state) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [guildId]: _, ...rest } = state.cache;
       return { cache: rest };
     });

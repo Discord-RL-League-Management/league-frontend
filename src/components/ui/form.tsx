@@ -4,31 +4,8 @@ import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/lib/utils.js"
 import { Label } from "@/components/ui/label.js"
-
-const useFormField = () => {
-  const itemContext = React.useContext(FormItemContext)
-
-  if (!itemContext) {
-    throw new Error("useFormField should be used within <FormItem>")
-  }
-
-  const { id } = itemContext
-
-  return {
-    id,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-  }
-}
-
-type FormItemContextValue = {
-  id: string
-}
-
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
+import { FormItemContext } from "./form-context.js"
+import { useFormField } from "./use-form-field.js"
 
 const FormItem = React.forwardRef<
   HTMLDivElement,
@@ -47,7 +24,7 @@ FormItem.displayName = "FormItem"
 const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
+>(({ ...props }, ref) => {
   const { formItemId } = useFormField()
 
   return (
@@ -118,7 +95,6 @@ const FormMessage = React.forwardRef<
 FormMessage.displayName = "FormMessage"
 
 export {
-  useFormField,
   FormItem,
   FormLabel,
   FormControl,

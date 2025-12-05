@@ -1,6 +1,8 @@
 import { useAuthStore } from '../stores/index.ts'
+import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button.js'
 import { Card, CardContent, CardHeader } from '@/components/ui/card.js'
+import { Alert, AlertDescription } from '@/components/ui/alert.js'
 
 /**
  * Login Page - Single responsibility: Display login UI only
@@ -8,6 +10,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card.js'
  */
 export default function Login() {
   const login = useAuthStore((state) => state.login)
+  const location = useLocation()
+  const errorState = location.state as { error?: string; description?: string } | null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -20,7 +24,14 @@ export default function Login() {
             Sign in with Discord to access your league dashboard
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {errorState?.error && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {errorState.description || errorState.error}
+              </AlertDescription>
+            </Alert>
+          )}
           <Button
             onClick={login}
             className="w-full"

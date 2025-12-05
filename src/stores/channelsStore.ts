@@ -23,22 +23,35 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
   pendingRequests: {},
 
   fetchChannels: async (guildId: string) => {
-    // Return cached if exists
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      console.warn('fetchChannels called with invalid guildId:', guildId);
+      return;
+    }
+
     if (get().channels[guildId]) {
       return;
     }
 
-    // Check if request already in-flight
     const existingRequest = get().pendingRequests[guildId];
     if (existingRequest) {
       return existingRequest;
     }
 
-    // Create new request promise
+    const abortController = new AbortController();
+    let isAborted = false;
+
     const requestPromise = (async () => {
       try {
+        if (isAborted) {
+          return;
+        }
+
         set({ error: null, loading: true });
         const data = await guildApi.getGuildChannels(guildId);
+        
+        if (isAborted) {
+          return;
+        }
         
         set((state) => ({
           channels: {
@@ -47,20 +60,27 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
           },
           loading: false,
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
+        if (isAborted) {
+          return;
+        }
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch channels';
         set({ error: errorMessage, loading: false });
         console.error('Error fetching channels:', err);
       } finally {
-        // Clean up pending request
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [guildId]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
       }
     })();
 
-    // Track pending request
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
+      isAborted = true;
+      abortController.abort();
+    };
+
     set((state) => ({
       pendingRequests: { ...state.pendingRequests, [guildId]: requestPromise },
     }));

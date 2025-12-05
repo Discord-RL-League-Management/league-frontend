@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
 import { useParams, Navigate, useLocation } from 'react-router-dom';
 import { useGuildFromStore } from '../hooks/useGuildFromStore.ts';
-import { useGuildStore } from '../stores/index.ts';
+import { useGuilds } from '../hooks/useGuilds.ts';
 import { LoadingState } from '../components/loading-state.tsx';
 import GuildDashboard from '../components/GuildDashboard.tsx';
 
@@ -10,26 +9,17 @@ import GuildDashboard from '../components/GuildDashboard.tsx';
  * Handles routing logic only, delegates data access to hook and rendering to component
  * Separation of Concerns: Routing validation separate from data fetching and UI
  * 
- * Fetches guild data if store is empty before making navigation decisions.
- * This prevents redirecting on page reload when store is temporarily empty.
+ * Uses useGuilds hook - hook handles all fetching logic automatically.
+ * Component focuses on routing logic only.
  */
 export function GuildDashboardPage() {
   const { guildId } = useParams<{ guildId: string }>();
   const location = useLocation();
+  const { guilds, isLoading } = useGuilds();
   const guild = useGuildFromStore(guildId);
-  const guilds = useGuildStore((state) => state.guilds);
-  const loading = useGuildStore((state) => state.loading);
-  const fetchGuilds = useGuildStore((state) => state.fetchGuilds);
-
-  useEffect(() => {
-    // If guilds are not loaded and we're not loading, fetch them
-    if (guilds.length === 0 && !loading) {
-      fetchGuilds();
-    }
-  }, [guilds.length, loading, fetchGuilds]);
 
   // Show loading while fetching guilds
-  if (loading || guilds.length === 0) {
+  if (isLoading || guilds.length === 0) {
     return <LoadingState message="Loading guild..." />;
   }
 

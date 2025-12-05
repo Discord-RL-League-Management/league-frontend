@@ -33,8 +33,7 @@ const BotCommandChannelsSectionComponent = ({ guildId, isEditMode = false }: Bot
 
   useEffect(() => {
     fetchChannels(guildId);
-    // fetchChannels from Zustand is stable, so we don't need it in deps
-  }, [guildId]);
+  }, [guildId, fetchChannels]);
 
   // Group channels by category and filter out category channels from selectable items
   const { categories, channelsByCategory, uncategorizedChannels } = useMemo(() => {
@@ -109,7 +108,6 @@ const BotCommandChannelsSectionComponent = ({ guildId, isEditMode = false }: Bot
       ];
       updateDraftSettings({ bot_command_channels: newChannels });
     } else {
-      // Remove channel
       const newChannels = botCommandChannels.filter(ch => ch.id !== channelId);
       updateDraftSettings({ bot_command_channels: newChannels });
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import { useMembersStore } from '@/stores/membersStore.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
@@ -64,8 +64,8 @@ export default function MemberList({ guildId }: MemberListProps) {
   const error = useMembersStore((state) => state.error);
   
   // Subscribe to cache updates for this specific query
-  // This selector will cause re-renders when the cache updates
-  const cacheKey = `${page}-20-${debouncedSearchQuery || ''}`;
+  // Memoize cacheKey to prevent unnecessary recalculations
+  const cacheKey = useMemo(() => `${page}-20-${debouncedSearchQuery || ''}`, [page, debouncedSearchQuery]);
   const cacheEntry = useMembersStore((state) => {
     const guildCache = state.cache[guildId];
     if (!guildCache) return null;
@@ -76,19 +76,43 @@ export default function MemberList({ guildId }: MemberListProps) {
   const members = cacheEntry?.members || [];
   const totalPages = cacheEntry?.pagination.pages || 1;
 
+  // Track in-flight request to prevent race conditions
+  const loadMembersRef = useRef<AbortController | null>(null);
+
   const loadMembers = useCallback(async () => {
-    // Check for cached data first (SWR pattern)
-    const cached = getMembers(guildId, page, 20, debouncedSearchQuery);
+    // Cancel previous request if still in flight
+    if (loadMembersRef.current) {
+      loadMembersRef.current.abort();
+    }
     
-    if (cached) {
-      // If stale, fetch fresh data in background (SWR pattern)
-      if (cached.isStale) {
-        // Fetch in background without showing loading state
+    const abortController = new AbortController();
+    loadMembersRef.current = abortController;
+    
+    try {
+      // Check for cached data first (SWR pattern)
+      const cached = getMembers(guildId, page, 20, debouncedSearchQuery);
+      
+      if (cached) {
+        // If stale, fetch fresh data in background (SWR pattern)
+        if (cached.isStale) {
+          // Fetch in background without showing loading state
+          await fetchMembers(guildId, page, 20, debouncedSearchQuery);
+        }
+      } else {
+        // No cache, fetch and show loading
         await fetchMembers(guildId, page, 20, debouncedSearchQuery);
       }
-    } else {
-      // No cache, fetch and show loading
-      await fetchMembers(guildId, page, 20, debouncedSearchQuery);
+    } catch (err: unknown) {
+      // Ignore abort errors
+      const error = err as { name?: string };
+      if (error.name !== 'AbortError' && !abortController.signal.aborted) {
+        console.error('Error loading members:', err);
+      }
+    } finally {
+      // Only clear ref if this is still the current request
+      if (loadMembersRef.current === abortController) {
+        loadMembersRef.current = null;
+      }
     }
   }, [guildId, page, debouncedSearchQuery, fetchMembers, getMembers]);
 

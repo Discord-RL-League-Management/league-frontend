@@ -32,13 +32,28 @@ export interface MinGamesPlayed {
 }
 
 /**
+ * Ascendancy algorithm weights configuration
+ */
+export interface AscendancyWeights {
+  /**
+   * Current MMR weight (Q) - typically 0.25
+   */
+  current: number;
+  /**
+   * Peak MMR weight (R) - typically 0.75
+   */
+  peak: number;
+}
+
+/**
  * MMR calculation configuration
  */
 export interface MmrCalculationConfig {
-  algorithm: 'WEIGHTED_AVERAGE' | 'PEAK_MMR' | 'CUSTOM';
+  algorithm: 'WEIGHTED_AVERAGE' | 'PEAK_MMR' | 'CUSTOM' | 'ASCENDANCY';
   weights?: MmrWeights;
   minGamesPlayed?: MinGamesPlayed;
   customFormula?: string;
+  ascendancyWeights?: AscendancyWeights;
   formulaValidated?: boolean;
   formulaValidationError?: string;
 }

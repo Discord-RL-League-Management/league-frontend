@@ -39,8 +39,7 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
 
   useEffect(() => {
     loadSettings(guildId);
-    // loadSettings from Zustand is stable, so we don't need it in deps
-  }, [guildId]);
+  }, [guildId, loadSettings]);
 
   const handleReset = async () => {
     try {
@@ -205,7 +204,7 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
 
         {/* Tab Content */}
         <TabsContent value="config" className="mt-6">
-          <Accordion type="multiple" defaultValue={['channels']} className="space-y-4">
+          <Accordion type="multiple" defaultValue={['channels', 'mmr']} className="space-y-4">
             <AccordionItem value="channels" className="border rounded-lg px-6 bg-card">
               <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
                 Channel Settings

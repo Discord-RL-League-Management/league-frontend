@@ -13,8 +13,10 @@ export interface Guild {
 // Import settings types from settings.ts
 import type { GuildSettingsType } from './settings.js';
 
+import type { Member } from '../stores/membersStore.js';
+
 export interface GuildDetails extends Guild {
   settings?: GuildSettingsType;
-  members?: any[];
+  members?: Member[];
 }
 

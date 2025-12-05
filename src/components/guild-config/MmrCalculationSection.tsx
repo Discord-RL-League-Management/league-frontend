@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select.js';
 import { useSettingsStore } from '@/stores/index.js';
 import { useMmrFormula } from '@/hooks/useMmrFormula.js';
-import type { MmrCalculationConfig } from '@/types/index.js';
 
 interface MmrCalculationSectionProps {
   guildId: string;
@@ -36,22 +35,20 @@ const MmrCalculationSectionComponent = ({
   const {
     testResult,
     validationResult,
-    testData,
     testing,
     validating,
     validateFormula,
     testFormula,
-    updateTestData,
   } = useMmrFormula();
 
   // Update draft settings when config changes
-  const handleAlgorithmChange = (algorithm: 'WEIGHTED_AVERAGE' | 'PEAK_MMR' | 'CUSTOM') => {
+  const handleAlgorithmChange = (algorithm: 'WEIGHTED_AVERAGE' | 'PEAK_MMR' | 'CUSTOM' | 'ASCENDANCY') => {
     if (!isEditMode) return;
     updateDraftSettings({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
-        algorithm,
+        algorithm: algorithm || 'WEIGHTED_AVERAGE',
       },
     });
   };
@@ -63,6 +60,7 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'WEIGHTED_AVERAGE',
         weights: {
           ...mmrConfig?.weights,
           [playlist]: numValue,
@@ -81,9 +79,28 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'WEIGHTED_AVERAGE',
         minGamesPlayed: {
           ...mmrConfig?.minGamesPlayed,
           [playlist]: numValue,
+        },
+      },
+    });
+  };
+
+  const handleAscendancyWeightChange = (field: 'current' | 'peak', value: string) => {
+    if (!isEditMode) return;
+    const numValue = value === '' ? undefined : parseFloat(value);
+    updateDraftSettings({
+      ...draftSettings,
+      mmrCalculation: {
+        ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'ASCENDANCY',
+        ascendancyWeights: {
+          current: mmrConfig?.ascendancyWeights?.current ?? 0.25,
+          peak: mmrConfig?.ascendancyWeights?.peak ?? 0.75,
+          ...mmrConfig?.ascendancyWeights,
+          [field]: numValue,
         },
       },
     });
@@ -95,6 +112,7 @@ const MmrCalculationSectionComponent = ({
       ...draftSettings,
       mmrCalculation: {
         ...mmrConfig,
+        algorithm: mmrConfig?.algorithm || 'CUSTOM',
         customFormula: formula,
         formulaValidated: false,
         formulaValidationError: undefined,
@@ -124,6 +142,7 @@ const MmrCalculationSectionComponent = ({
         },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validationResult, mmrConfig?.customFormula, isEditMode]);
 
   return (
@@ -149,6 +168,7 @@ const MmrCalculationSectionComponent = ({
             <SelectContent>
               <SelectItem value="WEIGHTED_AVERAGE">Weighted Average</SelectItem>
               <SelectItem value="PEAK_MMR">Peak MMR</SelectItem>
+              <SelectItem value="ASCENDANCY">Ascendancy</SelectItem>
               <SelectItem value="CUSTOM">Custom Formula</SelectItem>
             </SelectContent>
           </Select>
@@ -241,6 +261,68 @@ const MmrCalculationSectionComponent = ({
           </div>
         )}
 
+        {/* Ascendancy Configuration */}
+        {mmrConfig?.algorithm === 'ASCENDANCY' && (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-base font-semibold">Current vs Peak Weights</Label>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure how much to weight Current MMR vs Peak MMR. Peak is typically weighted higher (e.g., 0.75) than Current (e.g., 0.25). Weights should sum to 1.0 for best results.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ascendancy-current-weight">Current Weight (Q)</Label>
+                <Input
+                  id="ascendancy-current-weight"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  value={mmrConfig?.ascendancyWeights?.current ?? 0.25}
+                  onChange={(e) => handleAscendancyWeightChange('current', e.target.value)}
+                  disabled={!isEditMode}
+                  placeholder="0.25"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ascendancy-peak-weight">Peak Weight (R)</Label>
+                <Input
+                  id="ascendancy-peak-weight"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  value={mmrConfig?.ascendancyWeights?.peak ?? 0.75}
+                  onChange={(e) => handleAscendancyWeightChange('peak', e.target.value)}
+                  disabled={!isEditMode}
+                  placeholder="0.75"
+                />
+              </div>
+            </div>
+            {(() => {
+              const current = mmrConfig?.ascendancyWeights?.current ?? 0.25;
+              const peak = mmrConfig?.ascendancyWeights?.peak ?? 0.75;
+              const sum = current + peak;
+              if (Math.abs(sum - 1.0) > 0.01) {
+                return (
+                  <Alert>
+                    <AlertDescription>
+                      Weights sum to {sum.toFixed(2)}, not 1.0. This may produce unexpected results.
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+              return null;
+            })()}
+            <div className="p-4 bg-muted rounded-lg border">
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Ascendancy Algorithm:</strong> Calculates a weighted average of 2s and 3s performance based on game percentages. The algorithm combines Current and Peak MMR for each playlist, then weights the final score by the proportion of games played in each mode.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Custom Formula Configuration */}
         {mmrConfig?.algorithm === 'CUSTOM' && (
           <div className="space-y-4">
@@ -310,7 +392,9 @@ const MmrCalculationSectionComponent = ({
                       </span>
                     </>
                   ) : (
-                    <strong>Test Failed:</strong> {testResult.error}
+                    <>
+                      <strong>Test Failed:</strong> {testResult.error || 'Unknown error'}
+                    </>
                   )}
                 </AlertDescription>
               </Alert>

@@ -27,6 +27,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   pendingRequests: {},
 
   loadSettings: async (guildId: string) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      console.warn('loadSettings called with invalid guildId:', guildId);
+      return;
+    }
+
     // Return cached if exists (don't call set() to avoid triggering re-renders)
     if (get().settings[guildId]) {
       return;
@@ -38,11 +44,24 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return existingRequest;
     }
 
+    // Create abort controller for cleanup
+    let isAborted = false;
+
     // Create new request promise
     const requestPromise = (async () => {
       try {
+        // Check if aborted before starting
+        if (isAborted) {
+          return;
+        }
+
         set({ error: null, loading: true });
         const data = await guildApi.getGuildSettings(guildId);
+        
+        // Check if aborted after fetch completes
+        if (isAborted) {
+          return;
+        }
         
         set((state) => ({
           settings: {
@@ -52,18 +71,29 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           draftSettings: null,
           loading: false,
         }));
-      } catch (err: any) {
-        const errorMessage = err.response?.data?.message || 'Failed to load settings';
+      } catch (err: unknown) {
+        // Don't update state if aborted
+        if (isAborted) {
+          return;
+        }
+        const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+        const errorMessage = errorData?.message || 'Failed to load settings';
         set({ error: errorMessage, loading: false });
         console.error('Error loading settings:', err);
       } finally {
         // Clean up pending request
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [guildId]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
       }
     })();
+
+    // Store abort function for cleanup
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
+      isAborted = true;
+    };
 
     // Track pending request
     set((state) => ({
@@ -74,6 +104,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   updateSettings: async (guildId: string, updates: Partial<GuildSettingsType>) => {
+    // Input validation
+    if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
+      throw new Error('Invalid guildId provided');
+    }
+
+    // Prevent concurrent updates to the same guild
+    if (get().pendingUpdates.has(guildId)) {
+      throw new Error('Settings update already in progress for this guild');
+    }
+
     try {
       set({ error: null, loading: true });
       
@@ -98,10 +138,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         },
       }));
       
-      // Track pending update
-      const updateId = Date.now().toString();
+      // Track pending update using guildId as key to prevent concurrent updates
       set((state) => ({
-        pendingUpdates: new Set(state.pendingUpdates).add(updateId),
+        pendingUpdates: new Set(state.pendingUpdates).add(guildId),
       }));
       
       // Make API call
@@ -110,16 +149,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Remove from pending updates
       set((state) => {
         const newSet = new Set(state.pendingUpdates);
-        newSet.delete(updateId);
+        newSet.delete(guildId);
         return { pendingUpdates: newSet };
       });
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Rollback on failure - reload from server
       const store = get();
       await store.loadSettings(guildId);
-      const errorMessage = err.response?.data?.message || 'Failed to update settings';
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to update settings';
       set({ error: errorMessage });
+      
+      // Remove from pending updates on error
+      set((state) => {
+        const newSet = new Set(state.pendingUpdates);
+        newSet.delete(guildId);
+        return { pendingUpdates: newSet };
+      });
+      
       throw err;
     } finally {
       set({ loading: false });
@@ -151,7 +199,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({ error: null, loading: true });
       
       // Strip _metadata before sending to API (it's internal-only)
-      const { _metadata, ...settingsToSave } = draft as any;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _metadata, ...settingsToSave } = draft as GuildSettingsType & { _metadata?: unknown };
       await guildApi.updateGuildSettings(guildId, settingsToSave);
       
       // Update settings cache for this guild and clear draft
@@ -163,8 +212,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         draftSettings: null,
         loading: false,
       }));
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to save settings';
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to save settings';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -180,6 +230,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await guildApi.resetGuildSettings(guildId);
       // Clear cache for this guild before reloading to force fresh fetch
       set((state) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [guildId]: _, ...restSettings } = state.settings;
         return { settings: restSettings };
       });
@@ -187,8 +238,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const store = get();
       await store.loadSettings(guildId);
       set({ draftSettings: null });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to reset settings';
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to reset settings';
       set({ error: errorMessage });
       console.error('Error resetting settings:', err);
     } finally {

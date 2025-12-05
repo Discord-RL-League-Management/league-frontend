@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useTrackersStore } from '../stores/trackersStore.js';
+import { useMyTrackers } from '../hooks/useMyTrackers.js';
 import { AddTrackerForm } from '../components/tracker-registration/AddTrackerForm.js';
 import { TrackerListContainer } from '../components/tracker-management/TrackerListContainer.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
 import { Link } from 'react-router-dom';
 
 export default function MyTrackersPage() {
-  const { myTrackers, getMyTrackers, fetchTrackers } = useTrackersStore();
+  const { myTrackers, isLoading: trackerLoading } = useMyTrackers();
+  const { fetchTrackers } = useTrackersStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const initialize = async () => {
       setIsInitializing(true);
       try {
-        await getMyTrackers();
+        // Hook handles fetching myTrackers automatically
         // Also fetch trackers for the list (without guildId shows user's trackers)
         await fetchTrackers();
       } catch (err) {
@@ -24,9 +26,10 @@ export default function MyTrackersPage() {
     };
 
     initialize();
-  }, [getMyTrackers, fetchTrackers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
-  if (isInitializing) {
+  if (isInitializing || trackerLoading) {
     return (
       <div className="container mx-auto py-8 max-w-4xl">
         <div className="text-center py-8">

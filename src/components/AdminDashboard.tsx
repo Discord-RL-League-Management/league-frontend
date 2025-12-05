@@ -5,6 +5,9 @@ import { useChannelsStore } from '@/stores/channelsStore.js';
 import { guildApi } from '@/lib/api/guilds.js';
 import { MetricsDrawer } from './admin-dashboard/MetricsDrawer.js';
 import { DrawerTrigger } from './admin-dashboard/DrawerTrigger.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Skeleton } from '@/components/ui/skeleton.js';
+import { Users, UserPlus, Hash, Trophy } from 'lucide-react';
 
 interface AdminDashboardProps {
   guildId: string;
@@ -71,7 +74,8 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
     };
 
     loadData();
-  }, [guildId, fetchMembers, getMembers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]); // Only depend on guildId, not the functions
 
   useEffect(() => {
     const loadChannels = async () => {
@@ -83,7 +87,8 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
     };
 
     loadChannels();
-  }, [guildId, fetchChannels]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]); // Only depend on guildId, not the function
 
   // Get cached data
   const membersData = getMembers(guildId, 1, 20);
@@ -121,10 +126,62 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
     ? `${textChannels} text, ${voiceChannels} voice`
     : 'Server channels';
 
+  // Metric Card Component
+  const MetricCard = ({ 
+    title, 
+    value, 
+    description,
+    icon: Icon, 
+    isLoading, 
+    error,
+    iconColor = "text-muted-foreground",
+    iconBg = "bg-muted"
+  }: {
+    title: string;
+    value: string | number | null;
+    description?: string;
+    icon: React.ElementType;
+    isLoading: boolean;
+    error?: boolean;
+    iconColor?: string;
+    iconBg?: string;
+  }) => {
+    return (
+      <Card className="h-full">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          <div className={`${iconBg} p-2 rounded-lg`}>
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-10 w-24 mb-2" />
+          ) : error ? (
+            <p className="text-sm text-destructive">Error loading</p>
+          ) : (
+            <>
+              <div className="text-4xl font-bold mb-1">{value?.toLocaleString() ?? '—'}</div>
+              {description && (
+                <p className="text-xs text-muted-foreground mt-1">{description}</p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+          <p className="text-muted-foreground">Guild metrics and statistics</p>
+        </div>
         <DrawerTrigger onClick={() => setDrawerOpen(true)} />
       </div>
 
@@ -147,6 +204,50 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
           }}
         />
       )}
+
+      {/* Metrics Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Total Members"
+          value={totalMembers}
+          description={memberStats?.activeMembers != null ? `${memberStats.activeMembers} active` : undefined}
+          icon={Users}
+          isLoading={isLoadingMembers}
+          error={hasMembersError}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100 dark:bg-blue-900"
+        />
+        <MetricCard
+          title="New This Week"
+          value={memberStats?.newThisWeek ?? null}
+          description="Last 7 days"
+          icon={UserPlus}
+          isLoading={isLoadingMembers}
+          error={hasMembersError}
+          iconColor="text-green-600"
+          iconBg="bg-green-100 dark:bg-green-900"
+        />
+        <MetricCard
+          title="Total Channels"
+          value={totalChannels}
+          description={channelDescription}
+          icon={Hash}
+          isLoading={isLoadingChannels}
+          error={hasChannelsError}
+          iconColor="text-purple-600"
+          iconBg="bg-purple-100 dark:bg-purple-900"
+        />
+        <MetricCard
+          title="Leagues"
+          value={0}
+          description="Coming soon"
+          icon={Trophy}
+          isLoading={false}
+          error={false}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-100 dark:bg-amber-900"
+        />
+      </div>
 
       {/* Metrics Drawer */}
       <MetricsDrawer

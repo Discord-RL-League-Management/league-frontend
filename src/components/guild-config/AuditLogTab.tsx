@@ -28,8 +28,9 @@ const AuditLogTabComponent = ({ guildId }: AuditLogTabProps) => {
       setError(null);
       const result = await auditApi.getGuildAuditLogs(guildId, filters);
       setLogs(result.logs);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load audit logs');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to load audit logs');
       console.error('Error fetching audit logs:', err);
     } finally {
       setLoading(false);

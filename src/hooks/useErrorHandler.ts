@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 interface ApiError {
   message: string;
   code?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -21,11 +21,12 @@ export function useErrorHandler() {
       setError(null);
       setLoading(true);
       return await asyncFn();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string; code?: string; details?: Record<string, unknown> } }; message?: string };
       const apiError: ApiError = {
-        message: err.response?.data?.message || err.message || 'An error occurred',
-        code: err.response?.data?.code,
-        details: err.response?.data?.details,
+        message: errorObj.response?.data?.message || errorObj.message || 'An error occurred',
+        code: errorObj.response?.data?.code,
+        details: errorObj.response?.data?.details,
       };
       setError(apiError);
       console.error('Async operation failed:', err);

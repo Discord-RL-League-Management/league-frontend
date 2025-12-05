@@ -9,6 +9,7 @@ import { GuildDashboardPage, GuildDashboardRedirect } from './pages/GuildDashboa
 import TrackerDetailPage from './pages/TrackerDetailPage.tsx';
 import TrackerRegistrationPage from './pages/TrackerRegistrationPage.tsx';
 import MyTrackersPage from './pages/MyTrackersPage.tsx';
+import MMRCalculatorPage from './pages/MMRCalculatorPage.tsx';
 import { initNavigation } from './lib/navigation.ts';
 
 /**
@@ -106,6 +107,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MyTrackersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/guild/:guildId/DemoCalculator"
+            element={
+              <ProtectedRoute>
+                <MMRCalculatorPage />
               </ProtectedRoute>
             }
           />

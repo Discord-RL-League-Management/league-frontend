@@ -35,12 +35,13 @@ const MmrCalculationSectionComponent = ({
   const {
     testResult,
     validationResult,
+    testData,
     testing,
     validating,
     validateFormula,
     testFormula,
+    updateTestData,
   } = useMmrFormula();
-
 
   // Update draft settings when config changes
   const handleAlgorithmChange = (algorithm: 'WEIGHTED_AVERAGE' | 'PEAK_MMR' | 'CUSTOM' | 'ASCENDANCY') => {
@@ -144,7 +145,6 @@ const MmrCalculationSectionComponent = ({
       });
     }
   }, [validationResult, mmrConfig?.customFormula, isEditMode]);
-
 
   return (
     <Card>
@@ -393,9 +393,7 @@ const MmrCalculationSectionComponent = ({
                       </span>
                     </>
                   ) : (
-                    <>
-                      <strong>Test Failed:</strong> {testResult.error}
-                    </>
+                    <strong>Test Failed:</strong> {testResult.error}
                   )}
                 </AlertDescription>
               </Alert>

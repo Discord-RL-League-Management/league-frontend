@@ -1,36 +1,54 @@
 export default {
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
-    // Resolve .js imports to .ts/.tsx files for ESM compatibility
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-    // Handle @/ paths with .js extensions
     '^@/(.*)\\.js$': '<rootDir>/src/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: true,
-      tsconfig: {
-        jsx: 'react-jsx',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        allowImportingTsExtensions: true,
-        module: 'ES2022',
-        moduleResolution: 'node',
-        baseUrl: '.',
-        paths: {
-          '@/*': ['./src/*']
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: {
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          allowImportingTsExtensions: true,
+          jsx: 'react-jsx',
+          baseUrl: '.',
+          paths: {
+            '@/*': ['./src/*'],
+          },
         },
-        types: ['vite/client', 'jest', '@testing-library/jest-dom', 'node', 'react']
       },
-    }],
+    ],
   },
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  testMatch: ['**/__tests__/**/*.(ts|tsx)', '**/*.(test|spec).(ts|tsx)'],
+  testMatch: [
+    '**/__tests__/**/*.test.ts',
+    '**/__tests__/**/*.test.tsx',
+    '**/?(*.)+(spec|test).ts',
+    '**/?(*.)+(spec|test).tsx',
+  ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/setupTests.ts',
+    '!src/**/__tests__/**',
+    '!src/**/*.test.{ts,tsx}',
+    '!src/**/*.spec.{ts,tsx}',
+    '!src/vite-env.d.ts',
+    '!src/main.tsx',
   ],
+  coverageThreshold: {
+    global: {
+      branches: 90,
+      functions: 100,
+      lines: 95,
+      statements: 95,
+    },
+  },
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
 };
+

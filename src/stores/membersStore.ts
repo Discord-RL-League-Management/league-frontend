@@ -57,7 +57,6 @@ interface MembersState {
   error: string | null;
   pendingRequests: Record<string, Promise<void>>;
 
-  // Methods
   fetchMembers: (guildId: string, page: number, limit: number, searchQuery?: string) => Promise<void>;
   getMembers: (guildId: string, page: number, limit: number, searchQuery?: string) => {
     members: Member[];
@@ -106,8 +105,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    * Note: This is now handled inline in fetchMembers for better immutability
    */
   _evictOldest: () => {
-    // This method is kept for potential future use, but eviction is now handled inline
-    // in fetchMembers to ensure proper immutability
+    // Reserved for potential future use
   },
 
   /**
@@ -167,24 +165,19 @@ export const useMembersStore = create<MembersState>((set, get) => ({
     const cached = get().getCachedMembers(guildId, page, limit, searchQuery);
     const hasCachedData = !!cached;
 
-    // Check if request already in-flight
     const existingRequest = get().pendingRequests[requestKey];
     if (existingRequest) {
       return existingRequest;
     }
 
-    // If we have cached data and it's not stale, don't fetch
     if (hasCachedData && !get().isStale(cached!)) {
       return;
     }
 
-    // Create abort controller for cleanup
     let isAborted = false;
 
-    // Create new request promise
     const requestPromise = (async () => {
       try {
-        // Check if aborted before starting
         if (isAborted) {
           return;
         }
@@ -194,20 +187,16 @@ export const useMembersStore = create<MembersState>((set, get) => ({
           set({ error: null, loading: true });
         }
 
-        // Fetch fresh data
         const data = isSearch
           ? await guildApi.searchGuildMembers(guildId, searchQuery!, page, limit)
           : await guildApi.getGuildMembers(guildId, page, limit);
 
-        // Check if aborted after fetch completes
         if (isAborted) {
           return;
         }
 
-        // Get current cache state
         const currentCache = get().cache;
         
-        // Ensure guild cache exists (create new Map if needed)
         let guildCache = currentCache[guildId];
         if (!guildCache) {
           guildCache = new Map();
@@ -225,18 +214,15 @@ export const useMembersStore = create<MembersState>((set, get) => ({
           }
         }
 
-        // Create cache entry
         const cacheEntry: MemberCache = {
-          members: data.members,
-          pagination: data.pagination,
+          members: data.members as Member[],
+          pagination: data.pagination as PaginationInfo,
           timestamp: Date.now(),
           isSearch,
         };
 
-        // Update cache (Map preserves insertion order for LRU)
         guildCache.set(cacheKey, cacheEntry);
 
-        // Update state with new cache (immutable update)
         set((state) => ({
           cache: {
             ...state.cache,
@@ -245,7 +231,6 @@ export const useMembersStore = create<MembersState>((set, get) => ({
           loading: false,
         }));
       } catch (err: unknown) {
-        // Don't update state if aborted
         if (isAborted) {
           return;
         }
@@ -253,7 +238,6 @@ export const useMembersStore = create<MembersState>((set, get) => ({
         set({ error: errorMessage, loading: false });
         console.error('Error fetching members:', err);
       } finally {
-        // Clean up pending request
         set((state) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [requestKey]: _, ...rest } = state.pendingRequests;
@@ -262,12 +246,10 @@ export const useMembersStore = create<MembersState>((set, get) => ({
       }
     })();
 
-    // Store abort function for cleanup
     (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
     };
 
-    // Track pending request
     set((state) => ({
       pendingRequests: { ...state.pendingRequests, [requestKey]: requestPromise },
     }));

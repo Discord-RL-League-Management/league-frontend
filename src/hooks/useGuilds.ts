@@ -22,7 +22,6 @@ export function useGuilds() {
   const fetchGuilds = useGuildStore((state) => state.fetchGuilds);
 
   useEffect(() => {
-    // Only fetch if user is authenticated
     if (!user?.id) {
       return;
     }
@@ -44,22 +43,12 @@ export function useGuilds() {
     // Store's fetchGuilds handles ALL deduplication - no need to check flags here
     // The store sets pendingRequest synchronously before any async work,
     // so multiple simultaneous calls will be deduplicated automatically
-    let isMounted = true;
 
     if (isStale || isEmpty) {
       fetchGuilds().catch(() => {
         // Error is already handled in store state, this just prevents unhandled rejection warning
-        // Only log if component is still mounted
-        if (isMounted) {
-          // Error already handled in store
-        }
       });
     }
-
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
   // Note: fetchGuilds is stable from Zustand store

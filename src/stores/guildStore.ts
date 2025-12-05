@@ -7,8 +7,8 @@ interface GuildState {
   guilds: Guild[];
   loading: boolean;
   error: string | null;
-  lastFetched: number | null; // Timestamp of last successful fetch
-  pendingRequest: Promise<void> | null; // Track in-flight request
+  lastFetched: number | null;
+  pendingRequest: Promise<void> | null;
   fetchGuilds: (force?: boolean) => Promise<void>;
   retry: () => void;
 }
@@ -25,13 +25,11 @@ export const useGuildStore = create<GuildState>()(
       fetchGuilds: async (force = false) => {
         const state = get();
 
-        // If there's already a request in flight, wait for it instead of making a new one
         if (state.pendingRequest && !force) {
           return state.pendingRequest;
         }
 
-        // If we have recent data (within last 5 minutes) and not forcing, use cache
-        const CACHE_TTL = 300000; // 5 minutes
+        const CACHE_TTL = 300000;
         if (
           !force &&
           state.lastFetched &&
@@ -41,7 +39,6 @@ export const useGuildStore = create<GuildState>()(
           return Promise.resolve();
         }
 
-        // Create promise with resolve/reject handlers
         let resolveFn: (() => void) | undefined;
         let rejectFn: ((err: any) => void) | undefined;
 
@@ -54,7 +51,6 @@ export const useGuildStore = create<GuildState>()(
         // This prevents race conditions when multiple components call this simultaneously
         set({ pendingRequest: requestPromise });
 
-        // Now execute the actual async fetch
         (async () => {
           try {
             set({ error: null, loading: true });
@@ -96,12 +92,11 @@ export const useGuildStore = create<GuildState>()(
 
       retry: () => {
         const store = useGuildStore.getState();
-        store.fetchGuilds(true); // Force refresh on retry
+        store.fetchGuilds(true);
       },
     }),
     {
-      name: 'guild-store', // localStorage key
-      // Only persist guilds array and lastFetched, not loading/error/pendingRequest states
+      name: 'guild-store',
       partialize: (state) => ({ guilds: state.guilds, lastFetched: state.lastFetched }),
     }
   )

@@ -29,13 +29,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
           ? now - lastFetchTimeRef.current 
           : Infinity;
         
-        // If last fetch was recent and we've exceeded retries, stop trying
         if (timeSinceLastFetch < RETRY_DELAY) {
           console.warn('Max fetch attempts reached, stopping to prevent infinite loop');
           return;
         }
         
-        // Reset counter if enough time has passed
         if (timeSinceLastFetch >= RETRY_DELAY) {
           fetchAttemptRef.current = 0;
         }
@@ -49,14 +47,12 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         console.error('Error fetching user in ProtectedRoute:', err);
       });
     } else if (user) {
-      // Reset counter on successful fetch
       fetchAttemptRef.current = 0;
     }
-    // fetchUser is stable from Zustand, but we include it for clarity
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading]);
 
-  // Show error state if we've exhausted retries
+  if (!user && !loading && fetchAttemptRef.current >= MAX_RETRIES && error) {
   if (!user && !loading && fetchAttemptRef.current >= MAX_RETRIES && error) {
     return (
       <div className="min-h-screen flex items-center justify-center">

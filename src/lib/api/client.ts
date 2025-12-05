@@ -14,13 +14,11 @@ const pendingRequests = new Map<string, Promise<any>>();
 const MAX_PENDING_REQUESTS = 100; // Maximum number of pending requests before cleanup
 const REQUEST_TIMEOUT = 60000; // 60 seconds - force cleanup of stale requests
 
-// Helper function to create a unique key for a request
 function createRequestKey(config: AxiosRequestConfig): string {
   const paramsKey = config.params ? JSON.stringify(config.params) : '';
   return `${config.method?.toUpperCase() || 'GET'}:${config.url}:${paramsKey}`;
 }
 
-// Cleanup stale requests periodically
 function cleanupStaleRequests() {
   if (pendingRequests.size > MAX_PENDING_REQUESTS) {
     // If we exceed max, clear all (last resort)
@@ -29,25 +27,20 @@ function cleanupStaleRequests() {
   }
 }
 
-// Periodic cleanup of stale requests (every 30 seconds)
 setInterval(() => {
   cleanupStaleRequests();
 }, 30000);
 
-// Wrap axios methods to add deduplication
 const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' | 'put') => {
   return function<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     const fullConfig = { ...config, method, url };
     const key = createRequestKey(fullConfig);
     
-    // If a request with this key is already in flight, return the existing promise
     if (pendingRequests.has(key)) {
       return pendingRequests.get(key)!;
     }
     
-    // Create the request promise and store it
     const requestPromise = baseApi.request<T>(fullConfig).finally(() => {
-      // Remove from pending requests when done (success or error)
       pendingRequests.delete(key);
     });
     
@@ -59,14 +52,12 @@ const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' |
       }
     }, REQUEST_TIMEOUT);
     
-    // Clear timeout when request completes
     requestPromise.finally(() => {
       clearTimeout(timeoutId);
     });
     
     pendingRequests.set(key, requestPromise);
     
-    // Check if we need cleanup
     if (pendingRequests.size > MAX_PENDING_REQUESTS) {
       cleanupStaleRequests();
     }
@@ -87,7 +78,6 @@ export const api = {
   interceptors: baseApi.interceptors,
 } as typeof baseApi;
 
-// Response interceptor for error handling
 baseApi.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {

@@ -109,7 +109,6 @@ const RegisterCommandChannelsSectionComponent = ({ guildId, isEditMode = false }
       ];
       updateDraftSettings({ register_command_channels: newChannels });
     } else {
-      // Remove channel
       const newChannels = registerCommandChannels.filter(ch => ch.id !== channelId);
       updateDraftSettings({ register_command_channels: newChannels });
     }

@@ -109,7 +109,6 @@ const BotCommandChannelsSectionComponent = ({ guildId, isEditMode = false }: Bot
       ];
       updateDraftSettings({ bot_command_channels: newChannels });
     } else {
-      // Remove channel
       const newChannels = botCommandChannels.filter(ch => ch.id !== channelId);
       updateDraftSettings({ bot_command_channels: newChannels });
     }

@@ -1,4 +1,3 @@
-// ReactNode not used, removed
 import {
   Sheet,
   SheetContent,

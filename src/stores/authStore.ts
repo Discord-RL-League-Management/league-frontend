@@ -41,7 +41,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   retry: () => {
     set({ loading: true, error: null });
     const store = useAuthStore.getState();
-    store.fetchUser();
+    store.fetchUser().catch((err) => {
+      // Error is already handled in fetchUser, but we catch to prevent unhandled rejection
+      console.error('Error in retry:', err);
+    });
   },
 }));
 

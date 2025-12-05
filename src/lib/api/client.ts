@@ -11,12 +11,28 @@ const baseApi = axios.create({
 
 // Request deduplication: prevent multiple simultaneous requests to the same endpoint
 const pendingRequests = new Map<string, Promise<any>>();
+const MAX_PENDING_REQUESTS = 100; // Maximum number of pending requests before cleanup
+const REQUEST_TIMEOUT = 60000; // 60 seconds - force cleanup of stale requests
 
 // Helper function to create a unique key for a request
 function createRequestKey(config: AxiosRequestConfig): string {
   const paramsKey = config.params ? JSON.stringify(config.params) : '';
   return `${config.method?.toUpperCase() || 'GET'}:${config.url}:${paramsKey}`;
 }
+
+// Cleanup stale requests periodically
+function cleanupStaleRequests() {
+  if (pendingRequests.size > MAX_PENDING_REQUESTS) {
+    // If we exceed max, clear all (last resort)
+    console.warn(`Clearing ${pendingRequests.size} pending requests (exceeded max ${MAX_PENDING_REQUESTS})`);
+    pendingRequests.clear();
+  }
+}
+
+// Periodic cleanup of stale requests (every 30 seconds)
+setInterval(() => {
+  cleanupStaleRequests();
+}, 30000);
 
 // Wrap axios methods to add deduplication
 const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' | 'put') => {
@@ -35,7 +51,26 @@ const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' |
       pendingRequests.delete(key);
     });
     
+    // Add timeout to force cleanup if request takes too long
+    const timeoutId = setTimeout(() => {
+      if (pendingRequests.has(key)) {
+        console.warn(`Request timeout for key: ${key}, removing from pending requests`);
+        pendingRequests.delete(key);
+      }
+    }, REQUEST_TIMEOUT);
+    
+    // Clear timeout when request completes
+    requestPromise.finally(() => {
+      clearTimeout(timeoutId);
+    });
+    
     pendingRequests.set(key, requestPromise);
+    
+    // Check if we need cleanup
+    if (pendingRequests.size > MAX_PENDING_REQUESTS) {
+      cleanupStaleRequests();
+    }
+    
     return requestPromise;
   };
 };

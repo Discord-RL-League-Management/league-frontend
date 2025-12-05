@@ -31,8 +31,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ loading: true, error: null });
       const userData = await authApi.getCurrentUser();
       set({ user: userData, loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to load user data';
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to load user data';
       set({ error: errorMessage, loading: false });
       console.error('Error fetching user:', err);
     }

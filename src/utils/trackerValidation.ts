@@ -3,7 +3,7 @@
  * Matches backend validation logic for consistency
  */
 
-const TRN_PROFILE_REGEX = /^https:\/\/rocketleague\.tracker\.network\/rocket-league\/profile\/([^\/]+)\/([^\/]+)\/overview\/?$/i;
+const TRN_PROFILE_REGEX = /^https:\/\/rocketleague\.tracker\.network\/rocket-league\/profile\/([^/]+)\/([^/]+)\/overview\/?$/i;
 
 const VALID_PLATFORMS = ['steam', 'epic', 'xbl', 'psn', 'switch'];
 

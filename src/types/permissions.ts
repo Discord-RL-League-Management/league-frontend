@@ -39,8 +39,8 @@ export interface AuditLog {
   action: string;
   userId?: string | null;
   guildId?: string | null;
-  changes?: Record<string, any>;
-  metadata?: Record<string, any>;
+  changes?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   timestamp: string;
   // Computed fields for display
   user?: {

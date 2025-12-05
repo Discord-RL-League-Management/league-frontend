@@ -53,8 +53,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       const trackers = await trackerApi.getTrackers(guildId);
       set({ trackers, loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch trackers';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch trackers';
       set({ error: errorMessage, loading: false });
       console.error('Error fetching trackers:', err);
     }
@@ -68,8 +69,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       const tracker = await trackerApi.getTracker(id);
       set({ selectedTracker: tracker, loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch tracker';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch tracker';
       set({ error: errorMessage, loading: false });
       console.error('Error fetching tracker:', err);
     }
@@ -90,8 +92,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
         selectedTracker: state.selectedTracker?.id === id ? updated : state.selectedTracker,
         loading: false,
       }));
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to update tracker';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to update tracker';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -112,8 +115,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
         selectedTracker: state.selectedTracker?.id === id ? null : state.selectedTracker,
         loading: false,
       }));
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete tracker';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to delete tracker';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -134,8 +138,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       const trackers = await trackerApi.registerTrackers(urls);
       set({ myTrackers: trackers, loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to register trackers';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to register trackers';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -152,8 +157,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
         myTrackers: [...state.myTrackers, tracker],
         loading: false 
       }));
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to add tracker';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to add tracker';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -186,7 +192,7 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
     // This MUST be set synchronously to prevent race conditions
     // Use a more robust pattern to ensure handlers are always defined
     let resolveFn: (() => void) | undefined;
-    let rejectFn: ((err: any) => void) | undefined;
+    let rejectFn: ((err: unknown) => void) | undefined;
     
     const requestPromise = new Promise<void>((resolve, reject) => {
       // Assign handlers synchronously before any async work
@@ -215,9 +221,10 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
         });
         // resolveFn is guaranteed to be defined (assigned synchronously above)
         resolveFn!();
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Don't retry on rate limit (429) errors - prevent infinite loops
-        if (err.status === 429 || err.response?.status === 429) {
+        const errorObj = err as { status?: number; response?: { status?: number; data?: { message?: string } }; message?: string };
+        if (errorObj.status === 429 || errorObj.response?.status === 429) {
           const errorMessage = 'Too many requests. Please wait a moment before trying again.';
           set({
             error: errorMessage,
@@ -229,7 +236,7 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
           rejectFn!(err);
           return;
         }
-        const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch trackers';
+        const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch trackers';
         set({
           error: errorMessage,
           loading: false,
@@ -252,8 +259,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null, loading: true });
       const detail = await trackerApi.getTrackerDetail(trackerId);
       set({ trackerDetail: detail, loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch tracker detail';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch tracker detail';
       set({ error: errorMessage, loading: false });
       console.error('Error fetching tracker detail:', err);
     }
@@ -269,16 +277,18 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       // Refresh the tracker detail after refresh is triggered
       try {
         await get().getTrackerDetail(trackerId);
-      } catch (detailErr: any) {
+      } catch (detailErr: unknown) {
         // Log detail fetch error but don't fail the entire refresh operation
         console.error('Error fetching tracker detail after refresh:', detailErr);
         // Set a more specific error message
-        const detailErrorMessage = detailErr.response?.data?.message || detailErr.message || 'Failed to fetch updated tracker detail';
+        const detailErrorObj = detailErr as { response?: { data?: { message?: string } }; message?: string };
+        const detailErrorMessage = detailErrorObj.response?.data?.message || detailErrorObj.message || 'Failed to fetch updated tracker detail';
         set({ error: `Tracker refresh initiated, but failed to load details: ${detailErrorMessage}` });
       }
       set({ loading: false });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to refresh tracker';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to refresh tracker';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -292,8 +302,9 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       set({ error: null });
       const status = await trackerApi.getScrapingStatus(trackerId);
       set({ scrapingStatus: status });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch scraping status';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch scraping status';
       set({ error: errorMessage });
       console.error('Error fetching scraping status:', err);
     }

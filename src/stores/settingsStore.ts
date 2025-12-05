@@ -71,17 +71,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           draftSettings: null,
           loading: false,
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Don't update state if aborted
         if (isAborted) {
           return;
         }
-        const errorMessage = err.response?.data?.message || 'Failed to load settings';
+        const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+        const errorMessage = errorData?.message || 'Failed to load settings';
         set({ error: errorMessage, loading: false });
         console.error('Error loading settings:', err);
       } finally {
         // Clean up pending request
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [guildId]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
@@ -89,7 +91,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     })();
 
     // Store abort function for cleanup
-    (requestPromise as any).abort = () => {
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
     };
 
@@ -151,11 +153,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         return { pendingUpdates: newSet };
       });
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Rollback on failure - reload from server
       const store = get();
       await store.loadSettings(guildId);
-      const errorMessage = err.response?.data?.message || 'Failed to update settings';
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to update settings';
       set({ error: errorMessage });
       
       // Remove from pending updates on error
@@ -196,7 +199,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({ error: null, loading: true });
       
       // Strip _metadata before sending to API (it's internal-only)
-      const { _metadata, ...settingsToSave } = draft as any;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _metadata, ...settingsToSave } = draft as GuildSettingsType & { _metadata?: unknown };
       await guildApi.updateGuildSettings(guildId, settingsToSave);
       
       // Update settings cache for this guild and clear draft
@@ -208,8 +212,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         draftSettings: null,
         loading: false,
       }));
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to save settings';
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to save settings';
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -225,6 +230,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await guildApi.resetGuildSettings(guildId);
       // Clear cache for this guild before reloading to force fresh fetch
       set((state) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [guildId]: _, ...restSettings } = state.settings;
         return { settings: restSettings };
       });
@@ -232,8 +238,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const store = get();
       await store.loadSettings(guildId);
       set({ draftSettings: null });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to reset settings';
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      const errorMessage = errorData?.message || 'Failed to reset settings';
       set({ error: errorMessage });
       console.error('Error resetting settings:', err);
     } finally {

@@ -17,7 +17,7 @@ export function TrackerRegistrationForm() {
   const addUrlField = () => {
     if (urls.length < 4) {
       setUrls([...urls, '']);
-      setValidationResults([...validationResults, null as any]);
+      setValidationResults([...validationResults, null]);
     }
   };
 
@@ -41,7 +41,7 @@ export function TrackerRegistrationForm() {
       setValidationResults(newResults);
     } else {
       const newResults = [...validationResults];
-      newResults[index] = null as any;
+      newResults[index] = null;
       setValidationResults(newResults);
     }
   };
@@ -67,7 +67,7 @@ export function TrackerRegistrationForm() {
         if (url.trim()) {
           return validateTrackerUrl(url.trim());
         }
-        return null as any;
+        return null;
       });
       setValidationResults(newResults);
       return;

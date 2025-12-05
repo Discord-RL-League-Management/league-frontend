@@ -60,7 +60,7 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
           },
           loading: false,
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (isAborted) {
           return;
         }
@@ -69,13 +69,14 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
         console.error('Error fetching channels:', err);
       } finally {
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [guildId]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
       }
     })();
 
-    (requestPromise as any).abort = () => {
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
       abortController.abort();
     };

@@ -102,9 +102,10 @@ export default function MemberList({ guildId }: MemberListProps) {
         // No cache, fetch and show loading
         await fetchMembers(guildId, page, 20, debouncedSearchQuery);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Ignore abort errors
-      if (err.name !== 'AbortError' && !abortController.signal.aborted) {
+      const error = err as { name?: string };
+      if (error.name !== 'AbortError' && !abortController.signal.aborted) {
         console.error('Error loading members:', err);
       }
     } finally {

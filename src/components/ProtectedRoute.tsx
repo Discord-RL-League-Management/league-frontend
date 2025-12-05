@@ -53,7 +53,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }, [user, loading]);
 
   if (!user && !loading && fetchAttemptRef.current >= MAX_RETRIES && error) {
-  if (!user && !loading && fetchAttemptRef.current >= MAX_RETRIES && error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -35,7 +35,7 @@ export const trackerApi = {
     try {
       const response = await api.get('/api/trackers/me');
       return Array.isArray(response.data) ? response.data : [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle 404 gracefully (no trackers)
       if (error.response?.status === 404 || error.status === 404) {
         return [];

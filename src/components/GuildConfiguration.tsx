@@ -39,8 +39,7 @@ export default function GuildConfiguration({ guildId }: GuildConfigurationProps)
 
   useEffect(() => {
     loadSettings(guildId);
-    // loadSettings from Zustand is stable, so we don't need it in deps
-  }, [guildId]);
+  }, [guildId, loadSettings]);
 
   const handleReset = async () => {
     try {

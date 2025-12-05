@@ -35,12 +35,10 @@ const MmrCalculationSectionComponent = ({
   const {
     testResult,
     validationResult,
-    testData,
     testing,
     validating,
     validateFormula,
     testFormula,
-    updateTestData,
   } = useMmrFormula();
 
   // Update draft settings when config changes
@@ -144,6 +142,7 @@ const MmrCalculationSectionComponent = ({
         },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validationResult, mmrConfig?.customFormula, isEditMode]);
 
   return (
@@ -393,7 +392,9 @@ const MmrCalculationSectionComponent = ({
                       </span>
                     </>
                   ) : (
-                    <strong>Test Failed:</strong> {testResult.error}
+                    <>
+                      <strong>Test Failed:</strong> {testResult.error || 'Unknown error'}
+                    </>
                   )}
                 </AlertDescription>
               </Alert>

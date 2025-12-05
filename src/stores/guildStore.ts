@@ -40,7 +40,7 @@ export const useGuildStore = create<GuildState>()(
         }
 
         let resolveFn: (() => void) | undefined;
-        let rejectFn: ((err: any) => void) | undefined;
+        let rejectFn: ((err: unknown) => void) | undefined;
 
         const requestPromise = new Promise<void>((resolve, reject) => {
           resolveFn = resolve;
@@ -62,9 +62,10 @@ export const useGuildStore = create<GuildState>()(
               pendingRequest: null,
             });
             resolveFn!();
-          } catch (err: any) {
+          } catch (err: unknown) {
             // Don't retry on rate limit (429) errors - prevent infinite loops
-            if (err.status === 429 || err.response?.status === 429) {
+            const errorObj = err as { status?: number; response?: { status?: number; data?: { message?: string } } };
+            if (errorObj.status === 429 || errorObj.response?.status === 429) {
               const errorMessage = 'Too many requests. Please wait a moment before trying again.';
               set({
                 error: errorMessage,
@@ -76,7 +77,7 @@ export const useGuildStore = create<GuildState>()(
               rejectFn!(err);
               return;
             }
-            const errorMessage = err.response?.data?.message || 'Failed to load guilds';
+            const errorMessage = errorObj.response?.data?.message || 'Failed to load guilds';
             set({
               error: errorMessage,
               loading: false,

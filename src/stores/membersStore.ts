@@ -105,7 +105,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    * Evict oldest cache entry when limit reached
    * Note: This is now handled inline in fetchMembers for better immutability
    */
-  _evictOldest: (_guildId: string) => {
+  _evictOldest: () => {
     // This method is kept for potential future use, but eviction is now handled inline
     // in fetchMembers to ensure proper immutability
   },
@@ -255,6 +255,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
       } finally {
         // Clean up pending request
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [requestKey]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
@@ -262,7 +263,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
     })();
 
     // Store abort function for cleanup
-    (requestPromise as any).abort = () => {
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
     };
 
@@ -279,6 +280,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    */
   invalidateCache: (guildId: string) => {
     set((state) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [guildId]: _, ...rest } = state.cache;
       return { cache: rest };
     });

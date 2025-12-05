@@ -70,17 +70,19 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
           },
           loading: false,
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Don't update state if aborted
         if (isAborted) {
           return;
         }
-        const errorMessage = err.response?.data?.message || 'Failed to load permissions';
+        const errorData = (err as { response?: { data?: { message?: string } } })?.response?.data;
+        const errorMessage = errorData?.message || 'Failed to load permissions';
         set({ error: errorMessage, loading: false });
         console.error('Error fetching permissions:', err);
       } finally {
         // Clean up pending request
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [guildId]: _, ...rest } = state.pendingRequests;
           return { pendingRequests: rest };
         });
@@ -88,7 +90,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
     })();
 
     // Store abort function for cleanup
-    (requestPromise as any).abort = () => {
+    (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
     };
 

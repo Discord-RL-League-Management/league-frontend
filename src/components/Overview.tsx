@@ -39,23 +39,25 @@ export default function Overview({ guildId }: OverviewProps) {
   const { myTrackers, isLoading: trackerLoading } = useMyTrackers();
 
   // Helper function to check if error is an abort/cancel error
-  const isAbortError = (err: any, signal?: AbortSignal): boolean => {
+  const isAbortError = (err: unknown, signal?: AbortSignal): boolean => {
+    const error = err as { name?: string; message?: string; code?: string };
     return (
-      err.name === 'AbortError' ||
-      err.message === 'canceled' ||
-      err.code === 'ERR_CANCELED' ||
+      error.name === 'AbortError' ||
+      error.message === 'canceled' ||
+      error.code === 'ERR_CANCELED' ||
       signal?.aborted === true
     );
   };
 
   // Helper function to log errors consistently (only for non-abort errors)
-  const logError = (context: string, err: any) => {
+  const logError = (context: string, err: unknown) => {
+    const error = err as { message?: string; status?: number; response?: { data?: unknown } };
     console.error(`${context}:`, err);
-    console.error(`${context} - message:`, err.message);
-    console.error(`${context} - status:`, err.status);
-    console.error(`${context} - response:`, err.response?.data);
+    console.error(`${context} - message:`, error.message);
+    console.error(`${context} - status:`, error.status);
+    console.error(`${context} - response:`, error.response?.data);
     try {
-      console.error(`${context} - full error:`, JSON.stringify(err, Object.getOwnPropertyNames(err)));
+      console.error(`${context} - full error:`, JSON.stringify(err, Object.getOwnPropertyNames(err as object)));
     } catch {
       console.error(`${context} - full error:`, err);
     }
@@ -80,7 +82,7 @@ export default function Overview({ guildId }: OverviewProps) {
         if (!cancelled && !abortController.signal.aborted) {
           setUserMembership(membership);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Ignore abort errors - don't log or set state
         if (isAbortError(err, abortController.signal) || cancelled) {
           return;
@@ -129,13 +131,14 @@ export default function Overview({ guildId }: OverviewProps) {
         if (!cancelled && !abortController.signal.aborted) {
           setGuildRoles(roles);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Ignore abort errors - don't log or set state
         if (isAbortError(err, abortController.signal) || cancelled) {
           return;
         }
+        const error = err as { response?: { status?: number }; status?: number };
         // Handle 403 (non-admins can't fetch roles) gracefully
-        if (err.response?.status === 403 || err.status === 403) {
+        if (error.response?.status === 403 || error.status === 403) {
           // Non-admins can't fetch roles - this is expected, don't show error
           setGuildRoles([]);
         } else {
@@ -174,7 +177,7 @@ export default function Overview({ guildId }: OverviewProps) {
           setProfile(profileData);
           setStats(statsData);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Ignore abort errors - don't log or set state
         if (isAbortError(err, abortController.signal) || cancelled) {
           return;

@@ -15,7 +15,7 @@ interface MmrCalculatorProps {
 /**
  * Determine which playlists are needed based on algorithm
  */
-function getRequiredPlaylists(algorithm: string | undefined, config: any): Array<'ones' | 'twos' | 'threes' | 'fours'> {
+function getRequiredPlaylists(algorithm: string | undefined, config: { weights?: { ones?: number; twos?: number; threes?: number; fours?: number } } | undefined): Array<'ones' | 'twos' | 'threes' | 'fours'> {
   switch (algorithm) {
     case 'ASCENDANCY':
       // Ascendancy only uses 2s and 3s
@@ -86,9 +86,10 @@ export function MmrCalculator({ guildId }: MmrCalculatorProps) {
       const result = await mmrCalculationApi.calculateMmrDemo(guildId, calculatorData);
       setCalculatedResult(result.result);
       setCalculatedAlgorithm(result.algorithm);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorObj = error as { response?: { data?: { message?: string } }; message?: string };
       setCalculationError(
-        error.response?.data?.message || error.message || 'Failed to calculate MMR',
+        errorObj.response?.data?.message || errorObj.message || 'Failed to calculate MMR',
       );
       setCalculatedResult(null);
       setCalculatedAlgorithm(null);

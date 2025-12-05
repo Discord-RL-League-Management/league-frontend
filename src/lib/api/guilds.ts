@@ -33,7 +33,7 @@ export const guildApi = {
     return response.data;
   },
 
-  getSettingsHistory: async (guildId: string, limit: number = 50): Promise<any> => {
+  getSettingsHistory: async (guildId: string, limit: number = 50): Promise<unknown> => {
     const response = await api.get(`/api/guilds/${guildId}/settings/history`, {
       params: { limit },
     });
@@ -55,7 +55,7 @@ export const guildApi = {
   /**
    * Get guild members with pagination
    */
-  getGuildMembers: async (guildId: string, page: number = 1, limit: number = 20): Promise<any> => {
+  getGuildMembers: async (guildId: string, page: number = 1, limit: number = 20): Promise<{ members: unknown[]; pagination: unknown }> => {
     const response = await api.get(`/api/guilds/${guildId}/members`, {
       params: { page, limit },
     });
@@ -65,7 +65,7 @@ export const guildApi = {
   /**
    * Get specific guild member
    */
-  getGuildMember: async (guildId: string, userId: string, config?: AxiosRequestConfig): Promise<any> => {
+  getGuildMember: async (guildId: string, userId: string, config?: AxiosRequestConfig): Promise<unknown> => {
     const response = await api.get(`/api/guilds/${guildId}/members/${userId}`, config);
     return response.data;
   },
@@ -73,7 +73,7 @@ export const guildApi = {
   /**
    * Search guild members
    */
-  searchGuildMembers: async (guildId: string, query: string, page: number = 1, limit: number = 20): Promise<any> => {
+  searchGuildMembers: async (guildId: string, query: string, page: number = 1, limit: number = 20): Promise<{ members: unknown[]; pagination: unknown }> => {
     const response = await api.get(`/api/guilds/${guildId}/members/search`, {
       params: { q: query, page, limit },
     });

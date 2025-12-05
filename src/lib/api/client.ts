@@ -10,7 +10,7 @@ const baseApi = axios.create({
 });
 
 // Request deduplication: prevent multiple simultaneous requests to the same endpoint
-const pendingRequests = new Map<string, Promise<any>>();
+const pendingRequests = new Map<string, Promise<AxiosResponse<unknown>>>();
 const MAX_PENDING_REQUESTS = 100; // Maximum number of pending requests before cleanup
 const REQUEST_TIMEOUT = 60000; // 60 seconds - force cleanup of stale requests
 
@@ -32,7 +32,7 @@ setInterval(() => {
 }, 30000);
 
 const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' | 'put') => {
-  return function<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  return function<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     const fullConfig = { ...config, method, url };
     const key = createRequestKey(fullConfig);
     
@@ -87,10 +87,11 @@ baseApi.interceptors.response.use(
     }
     
     // Transform error for consistent handling
+    const errorData = error.response?.data as { message?: string; code?: string; details?: Record<string, unknown> } | undefined;
     const transformedError = {
-      message: (error.response?.data as any)?.message || error.message || 'Network error',
-      code: (error.response?.data as any)?.code,
-      details: (error.response?.data as any)?.details,
+      message: errorData?.message || error.message || 'Network error',
+      code: errorData?.code,
+      details: errorData?.details,
       status: error.response?.status,
     };
 

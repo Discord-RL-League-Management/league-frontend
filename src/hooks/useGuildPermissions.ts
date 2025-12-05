@@ -22,9 +22,10 @@ export function useGuildPermissions(guildId: string | null) {
     if (guildId) {
       fetchPermissions(guildId);
     }
-    // Only depend on guildId and fetchPermissions function
-    // fetchPermissions from Zustand store is stable
-  }, [guildId, fetchPermissions]);
+    // Only depend on guildId - fetchPermissions from Zustand store is stable
+    // and doesn't need to be in dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]);
 
   return {
     isAdmin,

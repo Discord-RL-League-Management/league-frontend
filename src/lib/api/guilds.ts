@@ -4,6 +4,7 @@
  */
 
 import { api } from './client.ts';
+import type { AxiosRequestConfig } from 'axios';
 import type { Guild, GuildDetails, GuildSettingsType, DiscordChannel, DiscordRole } from '../../types/index.ts';
 
 export const guildApi = {
@@ -46,8 +47,8 @@ export const guildApi = {
   },
 
   // NEW: Get guild roles from Discord API
-  getGuildRoles: async (guildId: string): Promise<DiscordRole[]> => {
-    const response = await api.get(`/api/guilds/${guildId}/roles`);
+  getGuildRoles: async (guildId: string, config?: AxiosRequestConfig): Promise<DiscordRole[]> => {
+    const response = await api.get(`/api/guilds/${guildId}/roles`, config);
     return response.data;
   },
 
@@ -64,8 +65,8 @@ export const guildApi = {
   /**
    * Get specific guild member
    */
-  getGuildMember: async (guildId: string, userId: string): Promise<any> => {
-    const response = await api.get(`/api/guilds/${guildId}/members/${userId}`);
+  getGuildMember: async (guildId: string, userId: string, config?: AxiosRequestConfig): Promise<any> => {
+    const response = await api.get(`/api/guilds/${guildId}/members/${userId}`, config);
     return response.data;
   },
 

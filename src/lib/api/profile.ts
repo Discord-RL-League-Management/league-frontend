@@ -4,16 +4,17 @@
  */
 
 import { api } from './client.ts';
+import type { AxiosRequestConfig } from 'axios';
 import type { UserProfile, UserStats, UserSettings } from '../../types/index.ts';
 
 export const profileApi = {
-  getProfile: async (): Promise<UserProfile> => {
-    const response = await api.get('/api/profile');
+  getProfile: async (config?: AxiosRequestConfig): Promise<UserProfile> => {
+    const response = await api.get('/api/profile', config);
     return response.data;
   },
 
-  getStats: async (): Promise<UserStats> => {
-    const response = await api.get('/api/profile/stats');
+  getStats: async (config?: AxiosRequestConfig): Promise<UserStats> => {
+    const response = await api.get('/api/profile/stats', config);
     return response.data;
   },
 

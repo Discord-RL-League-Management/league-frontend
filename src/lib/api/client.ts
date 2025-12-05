@@ -1,7 +1,17 @@
 import axios, { AxiosError, type AxiosResponse, type AxiosRequestConfig } from 'axios';
 import { navigate } from '../navigation.ts';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Use process.env in test, import.meta.env in Vite
+// Access process via globalThis to avoid TypeScript errors
+const nodeProcess = (globalThis as unknown as { process?: { env?: { VITE_API_URL?: string } } }).process;
+let API_URL: string;
+if (nodeProcess?.env?.VITE_API_URL) {
+  API_URL = nodeProcess.env.VITE_API_URL;
+} else {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - import.meta is a Vite-specific feature, not available in Node/test
+  API_URL = import.meta.env.VITE_API_URL;
+}
 
 const baseApi = axios.create({
   baseURL: API_URL,
@@ -37,7 +47,7 @@ const createDeduplicatedRequest = (method: 'get' | 'post' | 'patch' | 'delete' |
     const key = createRequestKey(fullConfig);
     
     if (pendingRequests.has(key)) {
-      return pendingRequests.get(key)!;
+      return pendingRequests.get(key)! as Promise<AxiosResponse<T>>;
     }
     
     const requestPromise = baseApi.request<T>(fullConfig).finally(() => {

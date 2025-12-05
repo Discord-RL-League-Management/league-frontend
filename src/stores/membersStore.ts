@@ -227,8 +227,8 @@ export const useMembersStore = create<MembersState>((set, get) => ({
 
         // Create cache entry
         const cacheEntry: MemberCache = {
-          members: data.members,
-          pagination: data.pagination,
+          members: data.members as Member[],
+          pagination: data.pagination as PaginationInfo,
           timestamp: Date.now(),
           isSearch,
         };

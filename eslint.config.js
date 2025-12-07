@@ -45,5 +45,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Blocks overly complex functions to maintain code readability and reduce maintenance burden
+      complexity: ['error', { max: 30 }],
+      'max-depth': ['error', { max: 5 }],
+      'max-lines-per-function': ['warn', { max: 200, skipBlankLines: true, skipComments: true }],
+    },
   },
 ])

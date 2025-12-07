@@ -9,6 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.j
 import { Skeleton } from '@/components/ui/skeleton.js';
 import { Users, UserPlus, Hash, Trophy } from 'lucide-react';
 
+// Module-level cache for member stats to prevent duplicate fetches
+const memberStatsCache = new Map<string, { data: { totalMembers: number; activeMembers: number; newThisWeek: number }; timestamp: number }>();
+const memberStatsFetchPromises = new Map<string, Promise<{ totalMembers: number; activeMembers: number; newThisWeek: number }>>();
+const MEMBER_STATS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 interface AdminDashboardProps {
   guildId: string;
 }
@@ -41,14 +46,46 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
   const channelsLoading = useChannelsStore((state) => state.loading);
   const channelsStoreError = useChannelsStore((state) => state.error);
 
-  // Fetch member statistics
+  // Fetch member statistics with caching
   useEffect(() => {
     const loadMemberStats = async () => {
+      // Check cache first
+      const cached = memberStatsCache.get(guildId);
+      const now = Date.now();
+      if (cached && (now - cached.timestamp < MEMBER_STATS_CACHE_TTL)) {
+        setMemberStats(cached.data);
+        setLoadingStats(false);
+        return;
+      }
+
+      // If there's already a fetch in progress, wait for it
+      const existingPromise = memberStatsFetchPromises.get(guildId);
+      if (existingPromise) {
+        try {
+          const stats = await existingPromise;
+          setMemberStats(stats);
+          setLoadingStats(false);
+        } catch (err) {
+          setMembersError(err instanceof Error ? err.message : 'Failed to load member statistics');
+          setLoadingStats(false);
+        }
+        return;
+      }
+
       try {
         setLoadingStats(true);
-        const stats = await guildApi.getMemberStats(guildId);
+        const fetchPromise = guildApi.getMemberStats(guildId);
+        memberStatsFetchPromises.set(guildId, fetchPromise);
+        
+        const stats = await fetchPromise;
+        
+        // Update cache
+        memberStatsCache.set(guildId, { data: stats, timestamp: Date.now() });
+        memberStatsFetchPromises.delete(guildId);
+        
         setMemberStats(stats);
       } catch (err) {
+        memberStatsFetchPromises.delete(guildId);
         setMembersError(err instanceof Error ? err.message : 'Failed to load member statistics');
       } finally {
         setLoadingStats(false);

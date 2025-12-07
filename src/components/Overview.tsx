@@ -3,10 +3,10 @@ import { ErrorDisplay } from '@/components/error-display.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
 import { useAuthStore } from '@/stores/authStore.js';
 import { useGuildPermissions } from '@/hooks/useGuildPermissions.js';
-import { useMyTrackers } from '@/hooks/useMyTrackers.js';
 import { useUserProfile } from '@/hooks/useUserProfile.js';
 import { useUserStats } from '@/hooks/useUserStats.js';
 import { useGuildMemberData } from '@/hooks/useGuildMemberData.js';
+import { useTrackersStore } from '@/stores/trackersStore.js';
 import {
   ProfileSection,
   StatisticsSection,
@@ -35,7 +35,8 @@ export default function Overview({ guildId }: OverviewProps) {
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { stats, loading: statsLoading, error: statsError } = useUserStats();
   const { userRoles, roleNameMap, loading: memberDataLoading } = useGuildMemberData(guildId, user?.id);
-  const { myTrackers, isLoading: trackerLoading } = useMyTrackers();
+  const myTrackers = useTrackersStore((state) => state.myTrackers);
+  const trackerLoading = useTrackersStore((state) => state.loading);
 
   const loading = profileLoading || statsLoading;
   const error = profileError || statsError;

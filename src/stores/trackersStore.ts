@@ -173,13 +173,13 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
       return state.myTrackersRequestInFlight;
     }
 
-    const CACHE_TTL = 30000; // 30 seconds
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
     if (
       !force &&
       state.myTrackersLastFetched &&
-      Date.now() - state.myTrackersLastFetched < CACHE_TTL &&
-      state.myTrackers.length > 0
+      Date.now() - state.myTrackersLastFetched < CACHE_TTL
     ) {
+      // Cache is valid - empty array is still valid cached data
       return Promise.resolve();
     }
 

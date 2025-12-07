@@ -2,14 +2,21 @@ import { create } from 'zustand';
 import { guildApi } from '../lib/api/guilds.js';
 import type { DiscordChannel } from '../types/discord.js';
 
+interface ChannelCache {
+  data: DiscordChannel[];
+  timestamp: number;
+}
+
 interface ChannelsState {
-  channels: Record<string, DiscordChannel[]>; // Per-guild channels cache
+  channels: Record<string, ChannelCache>; // Per-guild channels cache with timestamps
   loading: boolean;
   error: string | null;
   pendingRequests: Record<string, Promise<void>>; // Track in-flight requests per guild
   fetchChannels: (guildId: string) => Promise<void>;
   getChannels: (guildId: string) => DiscordChannel[];
 }
+
+const CHANNELS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Channels Store - Centralized state management
@@ -28,8 +35,13 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
       return;
     }
 
-    if (get().channels[guildId]) {
-      return;
+    // Check cache with TTL
+    const cached = get().channels[guildId];
+    if (cached) {
+      const now = Date.now();
+      if (now - cached.timestamp < CHANNELS_CACHE_TTL) {
+        return; // Cache is still valid
+      }
     }
 
     const existingRequest = get().pendingRequests[guildId];
@@ -56,7 +68,10 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
         set((state) => ({
           channels: {
             ...state.channels,
-            [guildId]: data,
+            [guildId]: {
+              data,
+              timestamp: Date.now(),
+            },
           },
           loading: false,
         }));
@@ -89,7 +104,8 @@ export const useChannelsStore = create<ChannelsState>((set, get) => ({
   },
 
   getChannels: (guildId: string) => {
-    return get().channels[guildId] || [];
+    const cached = get().channels[guildId];
+    return cached?.data || [];
   },
 }));
 

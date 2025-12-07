@@ -4,22 +4,48 @@ import { shouldIgnoreError, createAbortCleanup } from './useAbortableFetch.js';
 import { getUserFriendlyErrorMessage } from '@/utils/errorHandling.js';
 import type { UserProfile } from '@/types/index.js';
 
+// Module-level cache to prevent duplicate fetches across component instances
+let cachedProfile: UserProfile | null = null;
+let profileCacheTimestamp: number | null = null;
+let profileFetchPromise: Promise<UserProfile> | null = null;
+const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * useUserProfile Hook
  * 
  * Encapsulates profile API call with loading, error, and abort state management.
- * This hook moves data fetching logic from the Presentation layer to the Application layer,
- * maintaining proper architectural separation.
+ * Includes caching to prevent duplicate fetches across component instances.
  * 
  * @returns { profile, loading, error } - Profile data and loading/error states
  */
 export function useUserProfile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(cachedProfile);
+  const [loading, setLoading] = useState(!cachedProfile);
   const [error, setError] = useState<string | null>(null);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
+    const now = Date.now();
+    if (cachedProfile && profileCacheTimestamp && (now - profileCacheTimestamp < PROFILE_CACHE_TTL)) {
+      setProfile(cachedProfile);
+      setLoading(false);
+      return;
+    }
+
+    if (profileFetchPromise) {
+      profileFetchPromise
+        .then((data) => {
+          if (!cancelledRef.current) {
+            setProfile(data);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          // Silently ignore - errors handled in main fetch flow
+        });
+      return;
+    }
+
     const abortController = new AbortController();
     cancelledRef.current = false;
 
@@ -28,15 +54,23 @@ export function useUserProfile() {
         setLoading(true);
         setError(null);
 
-        const profileData = await profileApi.getProfile({
+        const fetchPromise = profileApi.getProfile({
           signal: abortController.signal,
         });
+        profileFetchPromise = fetchPromise;
+
+        const profileData = await fetchPromise;
+
+        cachedProfile = profileData;
+        profileCacheTimestamp = Date.now();
+        profileFetchPromise = null;
 
         if (!cancelledRef.current && !abortController.signal.aborted) {
           setProfile(profileData);
         }
       } catch (err: unknown) {
-        // Ignore abort errors - don't log or set state
+        profileFetchPromise = null;
+        // Suppress abort errors to prevent unnecessary state updates and console noise
         if (shouldIgnoreError(err, abortController.signal, cancelledRef.current)) {
           return;
         }

@@ -4,21 +4,34 @@ import { shouldIgnoreError, createAbortCleanup } from './useAbortableFetch.js';
 import type { DiscordRole } from '@/types/discord.js';
 import type { Member } from '@/stores/membersStore.js';
 
+// Module-level cache to prevent duplicate fetches across component instances
+const membershipCache = new Map<string, { data: Member | null; timestamp: number }>();
+const rolesCache = new Map<string, { data: DiscordRole[]; timestamp: number }>();
+const membershipFetchPromises = new Map<string, Promise<Member>>();
+const rolesFetchPromises = new Map<string, Promise<DiscordRole[]>>();
+const MEMBERSHIP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const ROLES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes (roles change less frequently)
+
 /**
  * useGuildMemberData Hook
  * 
  * Encapsulates guild member and roles API calls with loading, error, and abort state management.
- * This hook moves data fetching logic from the Presentation layer to the Application layer,
- * maintaining proper architectural separation.
+ * Includes caching to prevent duplicate fetches across component instances.
  * 
  * @param guildId - The guild ID to fetch member data for
  * @param userId - The user ID to fetch membership for
  * @returns { membership, roles, loading, roleNameMap, userRoles } - Member data, roles, loading state, role name map, and user roles
  */
 export function useGuildMemberData(guildId: string, userId: string | undefined) {
-  const [membership, setMembership] = useState<Member | null>(null);
-  const [roles, setRoles] = useState<DiscordRole[]>([]);
-  const [membershipLoading, setMembershipLoading] = useState(false);
+  const membershipKey = `${guildId}-${userId}`;
+  const rolesKey = guildId;
+  
+  const cachedMembership = membershipCache.get(membershipKey);
+  const cachedRoles = rolesCache.get(rolesKey);
+  
+  const [membership, setMembership] = useState<Member | null>(cachedMembership?.data ?? null);
+  const [roles, setRoles] = useState<DiscordRole[]>(cachedRoles?.data ?? []);
+  const [membershipLoading, setMembershipLoading] = useState(!cachedMembership);
   const [rolesLoading] = useState(false);
   const membershipCancelledRef = useRef(false);
   const rolesCancelledRef = useRef(false);
@@ -29,20 +42,50 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
       return;
     }
 
+    const now = Date.now();
+    const cached = membershipCache.get(membershipKey);
+    if (cached && (now - cached.timestamp < MEMBERSHIP_CACHE_TTL)) {
+      setMembership(cached.data);
+      setMembershipLoading(false);
+      return;
+    }
+
+    const existingPromise = membershipFetchPromises.get(membershipKey);
+    if (existingPromise) {
+      existingPromise
+        .then((data) => {
+          if (!membershipCancelledRef.current) {
+            setMembership(data);
+            setMembershipLoading(false);
+          }
+        })
+        .catch(() => {
+          // Silently ignore - errors handled in main fetch flow
+        });
+      return;
+    }
+
     const abortController = new AbortController();
     membershipCancelledRef.current = false;
 
     const fetchMembership = async () => {
       setMembershipLoading(true);
       try {
-        const memberData = await guildApi.getGuildMember(guildId, userId, {
+        const fetchPromise = guildApi.getGuildMember(guildId, userId, {
           signal: abortController.signal,
-        }) as Member;
+        }) as Promise<Member>;
+        membershipFetchPromises.set(membershipKey, fetchPromise);
+
+        const memberData = await fetchPromise;
+
+        membershipCache.set(membershipKey, { data: memberData, timestamp: Date.now() });
+        membershipFetchPromises.delete(membershipKey);
 
         if (!membershipCancelledRef.current && !abortController.signal.aborted) {
           setMembership(memberData);
         }
       } catch (err: unknown) {
+        membershipFetchPromises.delete(membershipKey);
         if (shouldIgnoreError(err, abortController.signal, membershipCancelledRef.current)) {
           return;
         }
@@ -61,11 +104,32 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
     fetchMembership();
 
     return createAbortCleanup(abortController, membershipCancelledRef);
-  }, [guildId, userId]);
+  }, [guildId, userId, membershipKey]);
 
   useEffect(() => {
     if (!guildId) {
       setRoles([]);
+      return;
+    }
+
+    const now = Date.now();
+    const cached = rolesCache.get(rolesKey);
+    if (cached && (now - cached.timestamp < ROLES_CACHE_TTL)) {
+      setRoles(cached.data);
+      return;
+    }
+
+    const existingPromise = rolesFetchPromises.get(rolesKey);
+    if (existingPromise) {
+      existingPromise
+        .then((data) => {
+          if (!rolesCancelledRef.current) {
+            setRoles(data);
+          }
+        })
+        .catch(() => {
+          // Silently ignore - errors handled in main fetch flow
+        });
       return;
     }
 
@@ -74,21 +138,29 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
 
     const fetchRoles = async () => {
       try {
-        const rolesData = await guildApi.getGuildRoles(guildId, {
+        const fetchPromise = guildApi.getGuildRoles(guildId, {
           signal: abortController.signal,
         });
+        rolesFetchPromises.set(rolesKey, fetchPromise);
+
+        const rolesData = await fetchPromise;
+
+        rolesCache.set(rolesKey, { data: rolesData, timestamp: Date.now() });
+        rolesFetchPromises.delete(rolesKey);
 
         if (!rolesCancelledRef.current && !abortController.signal.aborted) {
           setRoles(rolesData);
         }
       } catch (err: unknown) {
+        rolesFetchPromises.delete(rolesKey);
         if (shouldIgnoreError(err, abortController.signal, rolesCancelledRef.current)) {
           return;
         }
 
         const errorObj = err as { response?: { status?: number }; status?: number };
-        // Handle 403 (non-admins can't fetch roles) gracefully
+        // Non-admins cannot fetch roles (403), so cache empty result to prevent repeated failed requests
         if (errorObj.response?.status === 403 || errorObj.status === 403) {
+          rolesCache.set(rolesKey, { data: [], timestamp: Date.now() });
           if (!rolesCancelledRef.current && !abortController.signal.aborted) {
             setRoles([]);
           }
@@ -101,7 +173,7 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
     fetchRoles();
 
     return createAbortCleanup(abortController, rolesCancelledRef);
-  }, [guildId]);
+  }, [guildId, rolesKey]);
 
   const roleNameMap = useMemo(() => {
     const map = new Map<string, string>();

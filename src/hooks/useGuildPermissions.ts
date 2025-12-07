@@ -21,7 +21,7 @@ export function useGuildPermissions(guildId: string | null) {
   
   // Compute derived values after hooks are called
   const isAdmin = guildId ? isAdminFn(guildId) : false;
-  const isMember = guildId ? permissions[guildId]?.isMember : false;
+  const isMember = guildId ? permissions[guildId]?.data.isMember : false;
 
   useEffect(() => {
     if (guildId) {

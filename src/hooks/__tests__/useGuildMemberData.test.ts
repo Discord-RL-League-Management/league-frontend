@@ -9,7 +9,7 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { useGuildMemberData } from '../useGuildMemberData.js';
+import { useGuildMemberData, __resetCache } from '../useGuildMemberData.js';
 import { guildApi } from '@/lib/api/guilds.js';
 import type { DiscordRole } from '@/types/discord.js';
 import type { Member } from '@/stores/membersStore.js';
@@ -35,6 +35,7 @@ describe('useGuildMemberData', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    __resetCache();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
   });
 

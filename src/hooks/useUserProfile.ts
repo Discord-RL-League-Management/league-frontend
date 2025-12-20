@@ -11,6 +11,16 @@ let profileFetchPromise: Promise<UserProfile> | null = null;
 const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Reset module-level cache (for testing purposes)
+ * @internal
+ */
+export function __resetCache() {
+  cachedProfile = null;
+  profileCacheTimestamp = null;
+  profileFetchPromise = null;
+}
+
+/**
  * useUserProfile Hook
  * 
  * Encapsulates profile API call with loading, error, and abort state management.
@@ -37,11 +47,12 @@ export function useUserProfile() {
         .then((data) => {
           if (!cancelledRef.current) {
             setProfile(data);
-            setLoading(false);
           }
+          setLoading(false);
         })
         .catch(() => {
           // Silently ignore - errors handled in main fetch flow
+          setLoading(false);
         });
       return;
     }
@@ -80,9 +91,7 @@ export function useUserProfile() {
           setError(errorMessage);
         }
       } finally {
-        if (!cancelledRef.current && !abortController.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 

@@ -9,7 +9,7 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { useUserProfile } from '../useUserProfile.js';
+import { useUserProfile, __resetCache } from '../useUserProfile.js';
 import { profileApi } from '@/lib/api/profile.js';
 import type { UserProfile } from '@/types/index.js';
 
@@ -31,6 +31,7 @@ describe('useUserProfile', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    __resetCache();
   });
 
   describe('initial state', () => {

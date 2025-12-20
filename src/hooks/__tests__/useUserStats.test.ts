@@ -9,7 +9,7 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { useUserStats } from '../useUserStats.js';
+import { useUserStats, __resetCache } from '../useUserStats.js';
 import { profileApi } from '@/lib/api/profile.js';
 import type { UserStats } from '@/types/index.js';
 
@@ -31,6 +31,7 @@ describe('useUserStats', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    __resetCache();
   });
 
   describe('initial state', () => {

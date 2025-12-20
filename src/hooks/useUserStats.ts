@@ -11,6 +11,16 @@ let statsFetchPromise: Promise<UserStats> | null = null;
 const STATS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Reset module-level cache (for testing purposes)
+ * @internal
+ */
+export function __resetCache() {
+  cachedStats = null;
+  statsCacheTimestamp = null;
+  statsFetchPromise = null;
+}
+
+/**
  * useUserStats Hook
  * 
  * Encapsulates stats API call with loading, error, and abort state management.
@@ -37,11 +47,12 @@ export function useUserStats() {
         .then((data) => {
           if (!cancelledRef.current) {
             setStats(data);
-            setLoading(false);
           }
+          setLoading(false);
         })
         .catch(() => {
           // Silently ignore - errors handled in main fetch flow
+          setLoading(false);
         });
       return;
     }
@@ -80,9 +91,7 @@ export function useUserStats() {
           setError(errorMessage);
         }
       } finally {
-        if (!cancelledRef.current && !abortController.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 

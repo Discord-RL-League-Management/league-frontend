@@ -7,7 +7,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 export function TrackerRegistrationForm() {
   const [urls, setUrls] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
+  const [validationResults, setValidationResults] = useState<(ValidationResult | null)[]>([]);
   const { registerTrackers, error, clearError, myTrackers, loading: isCheckingTrackers } = useTrackersStore();
   const navigate = useNavigate();
 
@@ -28,7 +28,6 @@ export function TrackerRegistrationForm() {
     newUrls[index] = value;
     setUrls(newUrls);
 
-    // Validate
     if (value.trim()) {
       const result = validateTrackerUrl(value.trim());
       const newResults = [...validationResults];

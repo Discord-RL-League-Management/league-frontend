@@ -2,20 +2,38 @@ import { useEffect, useState } from 'react';
 import { ErrorDisplay } from '@/components/error-display.js';
 import { useMembersStore } from '@/stores/membersStore.js';
 import { useChannelsStore } from '@/stores/channelsStore.js';
-import { guildApi } from '@/lib/api/guilds.js';
 import { MetricsDrawer } from './admin-dashboard/MetricsDrawer.js';
 import { DrawerTrigger } from './admin-dashboard/DrawerTrigger.js';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
-import { Skeleton } from '@/components/ui/skeleton.js';
+import { MetricCard } from './admin-dashboard/MetricCard.js';
+import { useMemberStats } from '@/hooks/useMemberStats.js';
 import { Users, UserPlus, Hash, Trophy } from 'lucide-react';
-
-// Module-level cache for member stats to prevent duplicate fetches
-const memberStatsCache = new Map<string, { data: { totalMembers: number; activeMembers: number; newThisWeek: number }; timestamp: number }>();
-const memberStatsFetchPromises = new Map<string, Promise<{ totalMembers: number; activeMembers: number; newThisWeek: number }>>();
-const MEMBER_STATS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 interface AdminDashboardProps {
   guildId: string;
+}
+
+/**
+ * Helper function to calculate total members from various sources
+ */
+function calculateTotalMembers(
+  membersData: { pagination?: { total?: number } } | null | undefined,
+  memberStats: { totalMembers: number } | null,
+  guildId: string
+): number | null {
+  let totalMembers = membersData?.pagination?.total ?? null;
+  if (!totalMembers && memberStats) {
+    totalMembers = memberStats.totalMembers;
+  }
+  if (!totalMembers) {
+    const guildCache = useMembersStore.getState().cache[guildId];
+    if (guildCache) {
+      const firstEntry = guildCache.values().next().value;
+      if (firstEntry?.pagination?.total) {
+        totalMembers = firstEntry.pagination.total;
+      }
+    }
+  }
+  return totalMembers;
 }
 
 /**
@@ -26,83 +44,24 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ guildId }: AdminDashboardProps) {
   const [membersError, setMembersError] = useState<string | null>(null);
   const [channelsError, setChannelsError] = useState<string | null>(null);
-  const [memberStats, setMemberStats] = useState<{
-    totalMembers: number;
-    activeMembers: number;
-    newThisWeek: number;
-  } | null>(null);
-  const [loadingStats, setLoadingStats] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Members store
   const fetchMembers = useMembersStore((state) => state.fetchMembers);
   const getMembers = useMembersStore((state) => state.getMembers);
   const membersLoading = useMembersStore((state) => state.loading);
   const membersStoreError = useMembersStore((state) => state.error);
 
-  // Channels store
   const fetchChannels = useChannelsStore((state) => state.fetchChannels);
   const getChannels = useChannelsStore((state) => state.getChannels);
   const channelsLoading = useChannelsStore((state) => state.loading);
   const channelsStoreError = useChannelsStore((state) => state.error);
 
-  // Fetch member statistics with caching
-  useEffect(() => {
-    const loadMemberStats = async () => {
-      // Check cache first
-      const cached = memberStatsCache.get(guildId);
-      const now = Date.now();
-      if (cached && (now - cached.timestamp < MEMBER_STATS_CACHE_TTL)) {
-        setMemberStats(cached.data);
-        setLoadingStats(false);
-        return;
-      }
-
-      // If there's already a fetch in progress, wait for it
-      const existingPromise = memberStatsFetchPromises.get(guildId);
-      if (existingPromise) {
-        try {
-          const stats = await existingPromise;
-          setMemberStats(stats);
-          setLoadingStats(false);
-        } catch (err) {
-          setMembersError(err instanceof Error ? err.message : 'Failed to load member statistics');
-          setLoadingStats(false);
-        }
-        return;
-      }
-
-      try {
-        setLoadingStats(true);
-        const fetchPromise = guildApi.getMemberStats(guildId);
-        memberStatsFetchPromises.set(guildId, fetchPromise);
-        
-        const stats = await fetchPromise;
-        
-        // Update cache
-        memberStatsCache.set(guildId, { data: stats, timestamp: Date.now() });
-        memberStatsFetchPromises.delete(guildId);
-        
-        setMemberStats(stats);
-      } catch (err) {
-        memberStatsFetchPromises.delete(guildId);
-        setMembersError(err instanceof Error ? err.message : 'Failed to load member statistics');
-      } finally {
-        setLoadingStats(false);
-      }
-    };
-
-    loadMemberStats();
-  }, [guildId]);
-
-  // Fetch data on mount
+  const { memberStats, loading: loadingStats } = useMemberStats(guildId);
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Check if we already have cached data with pagination info
         const existingData = getMembers(guildId, 1, 20);
         if (!existingData) {
-          // Fetch first page of members to get total count (using default limit 20)
           await fetchMembers(guildId, 1, 20);
         }
       } catch (err) {
@@ -112,7 +71,7 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
 
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guildId]); // Only depend on guildId, not the functions
+  }, [guildId]);
 
   useEffect(() => {
     const loadChannels = async () => {
@@ -125,95 +84,27 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
 
     loadChannels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guildId]); // Only depend on guildId, not the function
+  }, [guildId]);
 
-  // Get cached data
   const membersData = getMembers(guildId, 1, 20);
   const channels = getChannels(guildId);
 
-  // Calculate metrics
-  let totalMembers = membersData?.pagination?.total ?? null;
-  if (!totalMembers && memberStats) {
-    totalMembers = memberStats.totalMembers;
-  }
-  if (!totalMembers) {
-    // Try to find any cached entry for this guild to get pagination.total
-    const guildCache = useMembersStore.getState().cache[guildId];
-    if (guildCache) {
-      const firstEntry = guildCache.values().next().value;
-      if (firstEntry?.pagination?.total) {
-        totalMembers = firstEntry.pagination.total;
-      }
-    }
-  }
+  const totalMembers = calculateTotalMembers(membersData, memberStats, guildId);
   const totalChannels = channels.length;
 
-  // Determine loading state
   const isLoadingMembers = (membersLoading || loadingStats) && totalMembers === null;
   const isLoadingChannels = channelsLoading && totalChannels === 0 && !channelsError;
 
-  // Determine error state (convert to boolean for MetricsDrawer)
   const hasMembersError = !!(membersStoreError || membersError);
   const hasChannelsError = !!(channelsStoreError || channelsError);
-
-  // Calculate channel types (if type property exists)
   const textChannels = channels.filter(ch => 'type' in ch && (ch.type === 0 || ch.type === 5)).length;
   const voiceChannels = channels.filter(ch => 'type' in ch && (ch.type === 2 || ch.type === 13)).length;
   const channelDescription = textChannels > 0 || voiceChannels > 0 
     ? `${textChannels} text, ${voiceChannels} voice`
     : 'Server channels';
 
-  // Metric Card Component
-  const MetricCard = ({ 
-    title, 
-    value, 
-    description,
-    icon: Icon, 
-    isLoading, 
-    error,
-    iconColor = "text-muted-foreground",
-    iconBg = "bg-muted"
-  }: {
-    title: string;
-    value: string | number | null;
-    description?: string;
-    icon: React.ElementType;
-    isLoading: boolean;
-    error?: boolean;
-    iconColor?: string;
-    iconBg?: string;
-  }) => {
-    return (
-      <Card className="h-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {title}
-          </CardTitle>
-          <div className={`${iconBg} p-2 rounded-lg`}>
-            <Icon className={`h-5 w-5 ${iconColor}`} />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-10 w-24 mb-2" />
-          ) : error ? (
-            <p className="text-sm text-destructive">Error loading</p>
-          ) : (
-            <>
-              <div className="text-4xl font-bold mb-1">{value?.toLocaleString() ?? '—'}</div>
-              {description && (
-                <p className="text-xs text-muted-foreground mt-1">{description}</p>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Admin Dashboard</h2>
@@ -222,7 +113,6 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
         <DrawerTrigger onClick={() => setDrawerOpen(true)} />
       </div>
 
-      {/* Error displays */}
       {(membersStoreError || membersError) && (
         <ErrorDisplay 
           error={membersStoreError || membersError || 'Unknown error'} 
@@ -242,7 +132,6 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
         />
       )}
 
-      {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Members"
@@ -286,7 +175,6 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
         />
       </div>
 
-      {/* Metrics Drawer */}
       <MetricsDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
@@ -303,4 +191,3 @@ export default function AdminDashboard({ guildId }: AdminDashboardProps) {
     </div>
   );
 }
-

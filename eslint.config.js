@@ -8,6 +8,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores([
     'dist',
+    'coverage',
+    'coverage/**',
     '**/*.test.ts',
     '**/*.test.tsx',
     '**/*.spec.ts',
@@ -22,6 +24,8 @@ export default defineConfig([
   ]),
   {
     ignores: [
+      'coverage',
+      'coverage/**',
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.spec.ts',

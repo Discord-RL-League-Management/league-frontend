@@ -31,6 +31,17 @@ interface TrackersState {
 }
 
 /**
+ * Helper function to extract error message from API error
+ */
+function extractErrorMessage(err: unknown): string {
+  const errorObj = err as { status?: number; response?: { status?: number; data?: { message?: string } }; message?: string };
+  if (errorObj.status === 429 || errorObj.response?.status === 429) {
+    return 'Too many requests. Please wait a moment before trying again.';
+  }
+  return errorObj.response?.data?.message || errorObj.message || 'Failed to fetch trackers';
+}
+
+/**
  * Trackers Store - Centralized state management for trackers
  */
 export const useTrackersStore = create<TrackersState>((set, get) => ({
@@ -208,19 +219,11 @@ export const useTrackersStore = create<TrackersState>((set, get) => ({
         resolveFn();
       } catch (err: unknown) {
         // Don't retry on rate limit (429) errors - prevent infinite loops
-        const errorObj = err as { status?: number; response?: { status?: number; data?: { message?: string } }; message?: string };
+        const errorObj = err as { status?: number; response?: { status?: number } };
         if (errorObj.status === 429 || errorObj.response?.status === 429) {
-          const errorMessage = 'Too many requests. Please wait a moment before trying again.';
-          set({
-            error: errorMessage,
-            loading: false,
-            myTrackersRequestInFlight: null,
-          });
           console.error('Rate limited - stopping retries:', err);
-          rejectFn(err);
-          return;
         }
-        const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Failed to fetch trackers';
+        const errorMessage = extractErrorMessage(err);
         set({
           error: errorMessage,
           loading: false,

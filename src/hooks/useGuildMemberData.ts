@@ -13,6 +13,17 @@ const MEMBERSHIP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const ROLES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes (roles change less frequently)
 
 /**
+ * Reset module-level cache (for testing purposes)
+ * @internal
+ */
+export function __resetCache() {
+  membershipCache.clear();
+  rolesCache.clear();
+  membershipFetchPromises.clear();
+  rolesFetchPromises.clear();
+}
+
+/**
  * useGuildMemberData Hook
  * 
  * Encapsulates guild member and roles API calls with loading, error, and abort state management.
@@ -56,11 +67,12 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
         .then((data) => {
           if (!membershipCancelledRef.current) {
             setMembership(data);
-            setMembershipLoading(false);
           }
+          setMembershipLoading(false);
         })
         .catch(() => {
           // Silently ignore - errors handled in main fetch flow
+          setMembershipLoading(false);
         });
       return;
     }
@@ -95,9 +107,7 @@ export function useGuildMemberData(guildId: string, userId: string | undefined) 
           setMembership(null);
         }
       } finally {
-        if (!membershipCancelledRef.current && !abortController.signal.aborted) {
-          setMembershipLoading(false);
-        }
+        setMembershipLoading(false);
       }
     };
 

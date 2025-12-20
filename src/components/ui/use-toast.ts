@@ -86,7 +86,6 @@ export const reducer = (state: State, action: Action): State => {
       const { toastId } = action
 
       if (toastId) {
-        // Clear existing timeout before adding to remove queue
         const existingTimeout = toastTimeouts.get(toastId);
         if (existingTimeout) {
           clearTimeout(existingTimeout);
@@ -94,7 +93,6 @@ export const reducer = (state: State, action: Action): State => {
         }
         addToRemoveQueue(toastId)
       } else {
-        // Clear all timeouts when dismissing all
         toastTimeouts.forEach(timeout => clearTimeout(timeout));
         toastTimeouts.clear();
         state.toasts.forEach((toast) => {
@@ -173,8 +171,6 @@ function toast({ ...props }: Toast) {
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
-  // Register listener on mount, remove on unmount
-  // setState is stable, so empty deps array is correct
   React.useEffect(() => {
     listeners.push(setState)
     // Sync initial state

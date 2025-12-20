@@ -25,7 +25,6 @@ export function validateTrackerUrl(url: string): ValidationResult {
     };
   }
 
-  // Basic URL format check
   let urlObj: URL;
   try {
     urlObj = new URL(url);
@@ -36,7 +35,6 @@ export function validateTrackerUrl(url: string): ValidationResult {
     };
   }
 
-  // Check protocol and hostname
   if (
     urlObj.protocol !== 'https:' ||
     urlObj.hostname !== 'rocketleague.tracker.network'
@@ -47,7 +45,6 @@ export function validateTrackerUrl(url: string): ValidationResult {
     };
   }
 
-  // Check pathname format (normalize trailing slashes to match regex behavior)
   // Regex allows 0-1 trailing slash, so normalize multiple slashes to at most one
   const normalizedPathname = urlObj.pathname.replace(/\/+$/, (match) => match.length > 1 ? '/' : match);
   if (
@@ -61,10 +58,8 @@ export function validateTrackerUrl(url: string): ValidationResult {
     };
   }
 
-  // Normalize URL for regex matching (preserve at most one trailing slash to match regex pattern)
   // Regex allows 0-1 trailing slash, so normalize multiple slashes to exactly one
   const normalizedUrl = url.replace(/\/+$/, (match) => match.length > 1 ? '/' : match);
-  // Use regex to extract platform and username from normalized URL
   const match = normalizedUrl.match(TRN_PROFILE_REGEX);
   if (!match || match.length < 3) {
     return {
@@ -77,7 +72,6 @@ export function validateTrackerUrl(url: string): ValidationResult {
   const platform = match[1].toLowerCase();
   const username = match[2];
 
-  // Validate platform
   if (!VALID_PLATFORMS.includes(platform)) {
     return {
       isValid: false,
@@ -85,7 +79,6 @@ export function validateTrackerUrl(url: string): ValidationResult {
     };
   }
 
-  // Validate username format
   if (!username || username.length === 0 || username.length > 100) {
     return {
       isValid: false,

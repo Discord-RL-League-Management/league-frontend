@@ -8,17 +8,35 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores([
     'dist',
+    'coverage',
+    'coverage/**',
     '**/*.test.ts',
     '**/*.test.tsx',
+    '**/*.spec.ts',
+    '**/*.spec.tsx',
     '**/__tests__/**',
+    '**/__test__/**',
     '**/test/**',
+    '**/tests/**',
+    '**/setupTests.ts',
+    '**/jest-setup.d.ts',
+    '**/jest.d.ts',
   ]),
   {
     ignores: [
+      'coverage',
+      'coverage/**',
       '**/*.test.ts',
       '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
       '**/__tests__/**',
+      '**/__test__/**',
       '**/test/**',
+      '**/tests/**',
+      '**/setupTests.ts',
+      '**/jest-setup.d.ts',
+      '**/jest.d.ts',
     ],
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -30,6 +48,12 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+    rules: {
+      // Blocks overly complex functions to maintain code readability and reduce maintenance burden
+      complexity: ['error', { max: 30 }],
+      'max-depth': ['error', { max: 5 }],
+      'max-lines-per-function': ['warn', { max: 200, skipBlankLines: true, skipComments: true }],
     },
   },
 ])

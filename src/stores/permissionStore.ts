@@ -2,8 +2,13 @@ import { create } from 'zustand';
 import { permissionApi } from '../lib/api/permissions.ts';
 import type { PermissionState, Permission } from '../types/permissions.ts';
 
+interface PermissionCache {
+  data: PermissionState;
+  timestamp: number;
+}
+
 interface PermissionStore {
-  permissions: Record<string, PermissionState>;
+  permissions: Record<string, PermissionCache>;
   loading: boolean;
   error: string | null;
   pendingRequests: Record<string, Promise<void>>;
@@ -13,6 +18,8 @@ interface PermissionStore {
   isAdmin: (guildId: string) => boolean;
   clear: () => void;
 }
+
+const PERMISSION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Permission Store - Centralized state management
@@ -26,31 +33,29 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
   pendingRequests: {},
 
   fetchPermissions: async (guildId: string) => {
-    // Input validation
     if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
       console.warn('fetchPermissions called with invalid guildId:', guildId);
       return;
     }
 
-    // Return cached if exists
-    if (get().permissions[guildId]) {
-      return;
+    const cached = get().permissions[guildId];
+    if (cached) {
+      const now = Date.now();
+      if (now - cached.timestamp < PERMISSION_CACHE_TTL) {
+        return;
+      }
     }
     
-    // Check if request already in-flight - do this atomically
     const currentState = get();
     const existingRequest = currentState.pendingRequests[guildId];
     if (existingRequest) {
       return existingRequest;
     }
 
-    // Create abort controller for cleanup
     let isAborted = false;
 
-    // Create new request promise
     const requestPromise = (async () => {
       try {
-        // Check if aborted before starting
         if (isAborted) {
           return;
         }
@@ -58,7 +63,6 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         set({ loading: true, error: null });
         const permissionState = await permissionApi.getMyPermissions(guildId);
         
-        // Check if aborted after fetch completes
         if (isAborted) {
           return;
         }
@@ -66,12 +70,14 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         set((state) => ({
           permissions: {
             ...state.permissions,
-            [guildId]: permissionState,
+            [guildId]: {
+              data: permissionState,
+              timestamp: Date.now(),
+            },
           },
           loading: false,
         }));
       } catch (err: unknown) {
-        // Don't update state if aborted
         if (isAborted) {
           return;
         }
@@ -80,7 +86,6 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         set({ error: errorMessage, loading: false });
         console.error('Error fetching permissions:', err);
       } finally {
-        // Clean up pending request
         set((state) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [guildId]: _, ...rest } = state.pendingRequests;
@@ -89,12 +94,10 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
       }
     })();
 
-    // Store abort function for cleanup
     (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
     };
 
-    // Track pending request atomically - use updater function to avoid race condition
     set((state) => ({
       pendingRequests: { ...state.pendingRequests, [guildId]: requestPromise },
     }));
@@ -103,17 +106,17 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
   },
 
   hasPermission: (guildId: string, permission: Permission): boolean => {
-    const state = get().permissions[guildId];
-    if (!state) return false;
+    const cached = get().permissions[guildId];
+    if (!cached) return false;
     
-    return state.permissions.includes(permission);
+    return cached.data.permissions.includes(permission);
   },
 
   isAdmin: (guildId: string): boolean => {
-    const state = get().permissions[guildId];
-    if (!state) return false;
+    const cached = get().permissions[guildId];
+    if (!cached) return false;
     
-    return state.isAdmin;
+    return cached.data.isAdmin;
   },
 
   clear: () => {

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTrackersStore } from '../../stores/trackersStore.js';
-import { useMyTrackers } from '../../hooks/useMyTrackers.js';
 import { useNavigate, Link } from 'react-router-dom';
 import { validateTrackerUrl, type ValidationResult } from '../../utils/trackerValidation.js';
 import { CheckCircle2, XCircle } from 'lucide-react';
@@ -8,12 +7,10 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 export function TrackerRegistrationForm() {
   const [urls, setUrls] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
-  const { registerTrackers, error, clearError } = useTrackersStore();
-  const { myTrackers, isLoading: isCheckingTrackers } = useMyTrackers();
+  const [validationResults, setValidationResults] = useState<(ValidationResult | null)[]>([]);
+  const { registerTrackers, error, clearError, myTrackers, loading: isCheckingTrackers } = useTrackersStore();
   const navigate = useNavigate();
 
-  // Add URL field
   const addUrlField = () => {
     if (urls.length < 4) {
       setUrls([...urls, '']);
@@ -21,19 +18,16 @@ export function TrackerRegistrationForm() {
     }
   };
 
-  // Remove URL field
   const removeUrlField = (index: number) => {
     setUrls(urls.filter((_, i) => i !== index));
     setValidationResults(validationResults.filter((_, i) => i !== index));
   };
 
-  // Update URL at index
   const updateUrl = (index: number, value: string) => {
     const newUrls = [...urls];
     newUrls[index] = value;
     setUrls(newUrls);
 
-    // Validate
     if (value.trim()) {
       const result = validateTrackerUrl(value.trim());
       const newResults = [...validationResults];
@@ -55,14 +49,12 @@ export function TrackerRegistrationForm() {
       return;
     }
 
-    // Validate all URLs
     const allValid = validUrls.every(url => {
       const result = validateTrackerUrl(url.trim());
       return result.isValid;
     });
 
     if (!allValid) {
-      // Re-validate all to show errors
       const newResults = urls.map(url => {
         if (url.trim()) {
           return validateTrackerUrl(url.trim());
@@ -79,7 +71,6 @@ export function TrackerRegistrationForm() {
       navigate('/dashboard/trackers');
     } catch (err) {
       console.error('Failed to register trackers:', err);
-      // Error is already set in the store
     } finally {
       setIsSubmitting(false);
     }

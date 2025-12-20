@@ -50,14 +50,12 @@ const MAX_CACHE_ENTRIES_PER_GUILD = 50; // LRU eviction limit
  * Members Store State
  */
 interface MembersState {
-  // Cache structure: guildId -> Map<cacheKey, MemberCache>
-  // Using Map for easier LRU eviction (insertion order)
+  // Map enables LRU eviction via insertion order preservation
   cache: Record<string, Map<string, MemberCache>>;
   loading: boolean;
   error: string | null;
   pendingRequests: Record<string, Promise<void>>;
 
-  // Methods
   fetchMembers: (guildId: string, page: number, limit: number, searchQuery?: string) => Promise<void>;
   getMembers: (guildId: string, page: number, limit: number, searchQuery?: string) => {
     members: Member[];
@@ -101,13 +99,8 @@ export const useMembersStore = create<MembersState>((set, get) => ({
     return Date.now() - cacheEntry.timestamp > ttl;
   },
 
-  /**
-   * Evict oldest cache entry when limit reached
-   * Note: This is now handled inline in fetchMembers for better immutability
-   */
   _evictOldest: () => {
-    // This method is kept for potential future use, but eviction is now handled inline
-    // in fetchMembers to ensure proper immutability
+    // Reserved for potential future use
   },
 
   /**
@@ -145,7 +138,6 @@ export const useMembersStore = create<MembersState>((set, get) => ({
    * Returns cached data immediately if available, fetches fresh in background
    */
   fetchMembers: async (guildId: string, page: number, limit: number, searchQuery?: string) => {
-    // Input validation
     if (!guildId || typeof guildId !== 'string' || guildId.trim() === '') {
       console.warn('fetchMembers called with invalid guildId:', guildId);
       return;
@@ -163,80 +155,65 @@ export const useMembersStore = create<MembersState>((set, get) => ({
     const requestKey = `${guildId}-${cacheKey}`;
     const isSearch = !!searchQuery;
 
-    // Check for cached data (even if stale - SWR pattern)
     const cached = get().getCachedMembers(guildId, page, limit, searchQuery);
     const hasCachedData = !!cached;
 
-    // Check if request already in-flight
     const existingRequest = get().pendingRequests[requestKey];
     if (existingRequest) {
       return existingRequest;
     }
 
-    // If we have cached data and it's not stale, don't fetch
     if (hasCachedData && !get().isStale(cached!)) {
       return;
     }
 
-    // Create abort controller for cleanup
     let isAborted = false;
 
-    // Create new request promise
     const requestPromise = (async () => {
       try {
-        // Check if aborted before starting
         if (isAborted) {
           return;
         }
 
-        // Only set loading if we don't have cached data (SWR pattern)
+        // SWR pattern: only show loading spinner if no cached data exists
         if (!hasCachedData) {
           set({ error: null, loading: true });
         }
 
-        // Fetch fresh data
         const data = isSearch
           ? await guildApi.searchGuildMembers(guildId, searchQuery!, page, limit)
           : await guildApi.getGuildMembers(guildId, page, limit);
 
-        // Check if aborted after fetch completes
         if (isAborted) {
           return;
         }
 
-        // Get current cache state
         const currentCache = get().cache;
         
-        // Ensure guild cache exists (create new Map if needed)
         let guildCache = currentCache[guildId];
         if (!guildCache) {
           guildCache = new Map();
         } else {
-          // Create a new Map instance to ensure immutability
           guildCache = new Map(guildCache);
         }
 
-        // Evict oldest if at limit (before adding new entry)
         if (guildCache.size >= MAX_CACHE_ENTRIES_PER_GUILD) {
-          // Map preserves insertion order, so first entry is oldest
+          // Map preserves insertion order, so first key is oldest
           const firstKey = guildCache.keys().next().value;
           if (firstKey) {
             guildCache.delete(firstKey);
           }
         }
 
-        // Create cache entry
         const cacheEntry: MemberCache = {
-          members: data.members,
-          pagination: data.pagination,
+          members: data.members as Member[],
+          pagination: data.pagination as PaginationInfo,
           timestamp: Date.now(),
           isSearch,
         };
 
-        // Update cache (Map preserves insertion order for LRU)
         guildCache.set(cacheKey, cacheEntry);
 
-        // Update state with new cache (immutable update)
         set((state) => ({
           cache: {
             ...state.cache,
@@ -245,7 +222,6 @@ export const useMembersStore = create<MembersState>((set, get) => ({
           loading: false,
         }));
       } catch (err: unknown) {
-        // Don't update state if aborted
         if (isAborted) {
           return;
         }
@@ -253,7 +229,6 @@ export const useMembersStore = create<MembersState>((set, get) => ({
         set({ error: errorMessage, loading: false });
         console.error('Error fetching members:', err);
       } finally {
-        // Clean up pending request
         set((state) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [requestKey]: _, ...rest } = state.pendingRequests;
@@ -262,12 +237,10 @@ export const useMembersStore = create<MembersState>((set, get) => ({
       }
     })();
 
-    // Store abort function for cleanup
     (requestPromise as Promise<void> & { abort?: () => void }).abort = () => {
       isAborted = true;
     };
 
-    // Track pending request
     set((state) => ({
       pendingRequests: { ...state.pendingRequests, [requestKey]: requestPromise },
     }));
